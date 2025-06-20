@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Icewind Dale Interactive Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- INTRO OVERLAY -->
+<div id="intro" class="intro-visible">
+  <div class="scroll">
+    <h1>⟢ Arcane Cartograph ⟢</h1>
+    <p class="incantation">Speak the words… <em>“Auril guide our steps.”</em></p>
+    <button id="reveal">Open the Map</button>
+    <label class="skip"><input type="checkbox" id="skipIntro"> Skip next time</label>
+  </div>
+</div>
+
+<!-- MAP & UI -->
+<div id="map-container">
+  <!-- Replace 'icewind_dale.jpg' with your actual high‑res map file inside /assets/ -->
+  <img id="map" src="assets/icewind_dale.jpg" alt="Icewind Dale Map">
+  <div id="markers"></div>
+</div>
+
+<div class="controls">
+  <button id="zoomIn">＋</button>
+  <button id="zoomOut">－</button>
+</div>
+
+<div id="legend">
+  <h3>Legend</h3>
+  <ul>
+    <li><span class="marker large pulse"></span> Large Town</li>
+    <li><span class="marker small"></span> Small Town</li>
+  </ul>
+</div>
+
+<script src="https://unpkg.com/@panzoom/panzoom@9.4.2/dist/panzoom.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
