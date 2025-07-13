@@ -1,44 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Icewind Dale Interactive Map</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Icewind Dale Interactive Map</title>
+    <meta name="description" content="Interactive D&D map of Icewind Dale with locations, towns, and points of interest">
+    <meta name="keywords" content="D&D, Dungeons Dragons, Icewind Dale, interactive map">
+    <meta property="og:title" content="Icewind Dale Interactive Map">
+    <meta property="og:description" content="Explore the frozen lands of Icewind Dale">
+    <meta property="og:image" content="assets/images/preview.jpg">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="assets/css/styles.css">
 </head>
 <body>
+    <div class="map-container" id="mapContainer">
+        <!-- Replace with your actual map image -->
+        <img src="assets/images/map.jpg" 
+             alt="Icewind Dale Map" 
+             class="map-image" 
+             id="mapImage"
+             draggable="false">
+    </div>
 
-<!-- INTRO OVERLAY -->
-<div id="intro" class="intro-visible">
-  <div class="scroll">
-    <h1>⟢ Arcane Cartograph ⟢</h1>
-    <p class="incantation">Speak the words… <em>“Auril guide our steps.”</em></p>
-    <button id="reveal">Open the Map</button>
-    <label class="skip"><input type="checkbox" id="skipIntro"> Skip next time</label>
-  </div>
-</div>
+    <div class="controls">
+        <div class="zoom-control">
+            <input type="range" id="zoomSlider" class="zoom-slider" min="0.25" max="3" step="0.05" value="1">
+            <div class="zoom-buttons">
+                <button class="zoom-btn" id="zoomOut" aria-label="Zoom out">−</button>
+                <button class="zoom-btn" id="zoomIn" aria-label="Zoom in">+</button>
+            </div>
+        </div>
+        <div style="font-size: 12px; color: #aaa;">
+            Zoom: <span id="zoomLevel">100%</span>
+        </div>
+    </div>
 
-<!-- MAP & UI -->
-<div id="map-container">
-  <!-- Replace 'icewind_dale.jpg' with your actual high‑res map file inside /assets/ -->
-  <img id="map" src="assets/icewind_dale.jpg" alt="Icewind Dale Map">
-  <div id="markers"></div>
-</div>
+    <div class="legend">
+        <h4>Legend</h4>
+        <div class="legend-item">
+            <div class="legend-marker" style="background: #4CAF50;"></div>
+            <span>Towns</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-marker" style="background: #2196F3;"></div>
+            <span>Points of Interest</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-marker" style="background: #ff4444;"></div>
+            <span>Custom Markers</span>
+        </div>
+    </div>
 
-<div class="controls">
-  <button id="zoomIn">＋</button>
-  <button id="zoomOut">－</button>
-</div>
+    <div class="coordinates" id="coordinates">
+        X: 0, Y: 0
+    </div>
 
-<div id="legend">
-  <h3>Legend</h3>
-  <ul>
-    <li><span class="marker large pulse"></span> Large Town</li>
-    <li><span class="marker small"></span> Small Town</li>
-  </ul>
-</div>
-
-<script src="https://unpkg.com/@panzoom/panzoom@9.4.2/dist/panzoom.min.js"></script>
-<script src="script.js"></script>
+    <!-- Scripts -->
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/markers.js"></script>
+    <script src="assets/js/map.js"></script>
+    <script src="assets/js/app.js"></script>
 </body>
 </html>

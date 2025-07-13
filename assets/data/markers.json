@@ -1,0 +1,254 @@
+{
+  "markers": [
+    {
+      "id": "bryn-shander",
+      "x": 2100,
+      "y": 1900,
+      "type": "town",
+      "name": "Bryn Shander",
+      "description": "The largest settlement in Icewind Dale, a walled town that serves as the region's hub of trade and commerce.",
+      "population": "1,200",
+      "notable": "Market square, Town walls, Speaker Duvessa Shane",
+      "image": null,
+      "customFields": {
+        "speaker": "Duvessa Shane",
+        "defenses": "Stone walls, town guard",
+        "economy": "Trade hub, scrimshaw carving"
+      }
+    },
+    {
+      "id": "targos",
+      "x": 1850,
+      "y": 1950,
+      "type": "town",
+      "name": "Targos",
+      "description": "A fishing town on the shores of Maer Dualdon, known for its hardy fishermen and knucklehead trout.",
+      "population": "1,000",
+      "notable": "Fishing fleet, The Luskan Arms tavern",
+      "image": null,
+      "customFields": {
+        "speaker": "Naerth Maxildanarr",
+        "primaryIndustry": "Fishing",
+        "famousFor": "Knucklehead trout"
+      }
+    },
+    {
+      "id": "caer-konig",
+      "x": 2800,
+      "y": 1650,
+      "type": "town",
+      "name": "Caer-Konig",
+      "description": "A small town on the southern shore of Lac Dinneshere, known for its castle ruins.",
+      "population": "150",
+      "notable": "Castle ruins, Northern Light inn",
+      "image": null,
+      "customFields": {
+        "speaker": "Ferrin Kastilar",
+        "landmark": "Caer-Konig castle ruins"
+      }
+    },
+    {
+      "id": "caer-dineval",
+      "x": 2600,
+      "y": 1800,
+      "type": "town",
+      "name": "Caer-Dineval",
+      "description": "A small town on the shores of Lac Dinneshere, struggling with internal conflicts.",
+      "population": "100",
+      "notable": "Caer-Dineval castle, Cult presence",
+      "image": null,
+      "customFields": {
+        "speaker": "Crannoc Siever",
+        "threat": "Cult of the Levistus"
+      }
+    },
+    {
+      "id": "easthaven",
+      "x": 2400,
+      "y": 1700,
+      "type": "town",
+      "name": "Easthaven",
+      "description": "A town that serves as a gateway to the eastern reaches of Icewind Dale.",
+      "population": "750",
+      "notable": "The White Lady Inn, Ferry service",
+      "image": null,
+      "customFields": {
+        "speaker": "Danneth Waylen",
+        "services": "Ferry, inn, supplies"
+      }
+    },
+    {
+      "id": "good-mead",
+      "x": 2200,
+      "y": 2100,
+      "type": "town",
+      "name": "Good Mead",
+      "description": "A small town famous for its honey mead and beekeeping.",
+      "population": "100",
+      "notable": "Mead production, Beehives, Shrine of Bahamut",
+      "image": null,
+      "customFields": {
+        "speaker": "Kendrick Rielsbarrow",
+        "specialty": "Honey mead brewing"
+      }
+    },
+    {
+      "id": "dougan-hole",
+      "x": 2000,
+      "y": 2200,
+      "type": "town",
+      "name": "Dougan's Hole",
+      "description": "A small knucklehead trout fishing village on the shore of Redwaters.",
+      "population": "50",
+      "notable": "Fishing, Redwaters lake",
+      "image": null,
+      "customFields": {
+        "speaker": "Edgra Durmoot",
+        "primaryIndustry": "Fishing"
+      }
+    },
+    {
+      "id": "bremen",
+      "x": 1700,
+      "y": 1800,
+      "type": "town",
+      "name": "Bremen",
+      "description": "A lumber town in the western part of Icewind Dale.",
+      "population": "150",
+      "notable": "Lumber mill, Wooden palisade",
+      "image": null,
+      "customFields": {
+        "speaker": "Dorbulgruf Shalescar",
+        "primaryIndustry": "Lumber"
+      }
+    },
+    {
+      "id": "lonelywood",
+      "x": 1400,
+      "y": 1600,
+      "type": "town",
+      "name": "Lonelywood",
+      "description": "A logging town surrounded by the Lonelywood Forest.",
+      "population": "100",
+      "notable": "Logging, Surrounded by forest",
+      "image": null,
+      "customFields": {
+        "speaker": "Nimsy Huddle",
+        "environment": "Forest surrounded"
+      }
+    },
+    {
+      "id": "termalaine",
+      "x": 2000,
+      "y": 1700,
+      "type": "town",
+      "name": "Termalaine",
+      "description": "A gem-mining town known for its valuable stones.",
+      "population": "600",
+      "notable": "Gem mining, Underground tunnels",
+      "image": null,
+      "customFields": {
+        "speaker": "Oarus Masthew",
+        "primaryIndustry": "Gem mining"
+      }
+    },
+    {
+      "id": "kelvins-cairn",
+      "x": 2400,
+      "y": 1400,
+      "type": "poi",
+      "name": "Kelvin's Cairn",
+      "description": "The only mountain in Icewind Dale, rising 1,800 feet above the tundra. Home to various creatures and ancient secrets.",
+      "notable": "Mountain peak, Caves, Verbeeg lair",
+      "image": null,
+      "customFields": {
+        "height": "1,800 feet",
+        "inhabitants": "Verbeeg, various creatures"
+      }
+    },
+    {
+      "id": "reghed-glacier",
+      "x": 4500,
+      "y": 800,
+      "type": "poi",
+      "name": "Reghed Glacier",
+      "description": "A massive glacier that dominates the eastern part of Icewind Dale, constantly moving and reshaping the land.",
+      "notable": "Glacier caves, Ancient ice, Tribal burial grounds",
+      "image": null,
+      "customFields": {
+        "type": "Glacier",
+        "significance": "Ancient burial grounds"
+      }
+    },
+    {
+      "id": "sea-of-moving-ice",
+      "x": 1000,
+      "y": 1000,
+      "type": "poi",
+      "name": "Sea of Moving Ice",
+      "description": "A treacherous expanse of shifting ice floes and icebergs to the west of Icewind Dale.",
+      "notable": "Ice floes, Icebergs, Dangerous navigation",
+      "image": null,
+      "customFields": {
+        "hazards": "Shifting ice, extreme cold",
+        "navigation": "Extremely dangerous"
+      }
+    },
+    {
+      "id": "spine-of-the-world",
+      "x": 3000,
+      "y": 3500,
+      "type": "poi",
+      "name": "Spine of the World",
+      "description": "The southern mountain range that borders Icewind Dale, nearly impassable and full of dangers.",
+      "notable": "Mountain range, Passes, Monster lairs",
+      "image": null,
+      "customFields": {
+        "type": "Mountain range",
+        "passability": "Nearly impassable"
+      }
+    },
+    {
+      "id": "maer-dualdon",
+      "x": 2000,
+      "y": 1850,
+      "type": "poi",
+      "name": "Maer Dualdon",
+      "description": "The largest lake in Icewind Dale, source of knucklehead trout and freshwater.",
+      "notable": "Largest lake, Knucklehead trout, Freshwater source",
+      "image": null,
+      "customFields": {
+        "type": "Lake",
+        "size": "Largest in Icewind Dale"
+      }
+    },
+    {
+      "id": "lac-dinneshere",
+      "x": 2700,
+      "y": 1700,
+      "type": "poi",
+      "name": "Lac Dinneshere",
+      "description": "A deep, cold lake known for its excellent fishing and dangerous depths.",
+      "notable": "Deep lake, Excellent fishing, Cold waters",
+      "image": null,
+      "customFields": {
+        "type": "Lake",
+        "characteristics": "Deep and cold"
+      }
+    },
+    {
+      "id": "redwaters",
+      "x": 2100,
+      "y": 2150,
+      "type": "poi",
+      "name": "Redwaters",
+      "description": "A smaller lake with reddish water, possibly from mineral deposits.",
+      "notable": "Red-colored water, Mineral deposits",
+      "image": null,
+      "customFields": {
+        "type": "Lake",
+        "uniqueFeature": "Red-colored water"
+      }
+    }
+  ]
+}

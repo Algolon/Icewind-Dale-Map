@@ -1,0 +1,417 @@
+class InteractiveMap {
+    constructor() {
+        this.mapContainer = document.getElementById('mapContainer');
+        this.mapImage = document.getElementById('mapImage');
+        this.zoomSlider = document.getElementById('zoomSlider');
+        this.zoomLevel = document.getElementById('zoomLevel');
+        this.coordinates = document.getElementById('coordinates');
+        
+        // Map state
+        this.scale = MAP_CONFIG.initialZoom;
+        this.translateX = 0;
+        this.translateY = 0;
+        this.isDragging = false;
+        this.lastMouseX = 0;
+        this.lastMouseY = 0;
+        
+        // Touch handling
+        this.initialDistance = 0;
+        this.initialScale = 1;
+        
+        // Map dimensions
+        this.mapWidth = MAP_CONFIG.width;
+        this.mapHeight = MAP_CONFIG.height;
+        
+        // Initialize
+        this.setupEventListeners();
+        this.updateTransform();
+        this.centerMap();
+        this.updateZoomLevel();
+        
+        // Initialize marker manager
+        this.markerManager = new MarkerManager(this);
+    }
+    
+    setupEventListeners() {
+        // Zoom controls
+        this.setupZoomControls();
+        
+        // Mouse events
+        this.setupMouseEvents();
+        
+        // Touch events
+        this.setupTouchEvents();
+        
+        // Keyboard events
+        this.setupKeyboardEvents();
+        
+        // Window events
+        this.setupWindowEvents();
+    }
+    
+    setupZoomControls() {
+        // Zoom slider
+        this.zoomSlider.addEventListener('input', (e) => {
+            this.scale = parseFloat(e.target.value);
+            this.updateTransform();
+            this.updateZoomLevel();
+        });
+        
+        // Zoom buttons
+        document.getElementById('zoomIn').addEventListener('click', () => {
+            this.zoomIn();
+        });
+        
+        document.getElementById('zoomOut').addEventListener('click', () => {
+            this.zoomOut();
+        });
+    }
+    
+    setupMouseEvents() {
+        // Mouse down
+        this.mapContainer.addEventListener('mousedown', (e) => {
+            if (e.target.classList.contains('marker')) return;
+            this.handleMouseDown(e);
+        });
+        
+        // Mouse move
+        document.addEventListener('mousemove', (e) => {
+            this.handleMouseMove(e);
+        });
+        
+        // Mouse up
+        document.addEventListener('mouseup', () => {
+            this.handleMouseUp();
+        });
+        
+        // Wheel zoom
+        this.mapContainer.addEventListener('wheel', (e) => {
+            this.handleWheel(e);
+        });
+        
+        // Double click to zoom
+        this.mapContainer.addEventListener('dblclick', (e) => {
+            this.handleDoubleClick(e);
+        });
+        
+        // Prevent context menu
+        this.mapContainer.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+        
+        // Mouse coordinate tracking
+        if (MAP_CONFIG.showCoordinates) {
+            this.mapContainer.addEventListener('mousemove', (e) => {
+                this.updateCoordinates(e);
+            });
+        }
+    }
+    
+    setupTouchEvents() {
+        this.mapContainer.addEventListener('touchstart', (e) => {
+            this.handleTouchStart(e);
+        });
+        
+        this.mapContainer.addEventListener('touchmove', (e) => {
+            this.handleTouchMove(e);
+        });
+        
+        this.mapContainer.addEventListener('touchend', () => {
+            this.handleTouchEnd();
+        });
+    }
+    
+    setupKeyboardEvents() {
+        document.addEventListener('keydown', (e) => {
+            // Arrow keys for panning
+            const panDistance = 50;
+            switch(e.key) {
+                case 'ArrowUp':
+                    e.preventDefault();
+                    this.translateY += panDistance;
+                    this.constrainPosition();
+                    this.updateTransform();
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    this.translateY -= panDistance;
+                    this.constrainPosition();
+                    this.updateTransform();
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    this.translateX += panDistance;
+                    this.constrainPosition();
+                    this.updateTransform();
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    this.translateX -= panDistance;
+                    this.constrainPosition();
+                    this.updateTransform();
+                    break;
+                case '+':
+                case '=':
+                    e.preventDefault();
+                    this.zoomIn();
+                    break;
+                case '-':
+                    e.preventDefault();
+                    this.zoomOut();
+                    break;
+                case '0':
+                    e.preventDefault();
+                    this.resetView();
+                    break;
+            }
+        });
+    }
+    
+    setupWindowEvents() {
+        window.addEventListener('resize', () => {
+            this.handleResize();
+        });
+    }
+    
+    // Mouse event handlers
+    handleMouseDown(e) {
+        this.isDragging = true;
+        this.lastMouseX = e.clientX;
+        this.lastMouseY = e.clientY;
+        this.mapContainer.style.cursor = 'grabbing';
+    }
+    
+    handleMouseMove(e) {
+        if (this.isDragging) {
+            const deltaX = e.clientX - this.lastMouseX;
+            const deltaY = e.clientY - this.lastMouseY;
+            
+            this.translateX += deltaX;
+            this.translateY += deltaY;
+            
+            this.constrainPosition();
+            this.updateTransform();
+            
+            this.lastMouseX = e.clientX;
+            this.lastMouseY = e.clientY;
+        }
+    }
+    
+    handleMouseUp() {
+        this.isDragging = false;
+        this.mapContainer.style.cursor = 'grab';
+    }
+    
+    handleWheel(e) {
+        e.preventDefault();
+        
+        const rect = this.mapContainer.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        const delta = e.deltaY > 0 ? -MAP_CONFIG.wheelZoomSensitivity : MAP_CONFIG.wheelZoomSensitivity;
+        this.zoomToPoint(mouseX, mouseY, delta);
+    }
+    
+    handleDoubleClick(e) {
+        if (e.target.classList.contains('marker')) return;
+        
+        const rect = this.mapContainer.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        const targetZoom = this.scale < 2 ? 2 : 1;
+        this.zoomToPointAbsolute(mouseX, mouseY, targetZoom);
+    }
+    
+    // Touch event handlers
+    handleTouchStart(e) {
+        if (e.touches.length === 1) {
+            this.isDragging = true;
+            this.lastMouseX = e.touches[0].clientX;
+            this.lastMouseY = e.touches[0].clientY;
+        } else if (e.touches.length === 2) {
+            this.isDragging = false;
+            this.initialDistance = this.getTouchDistance(e.touches);
+            this.initialScale = this.scale;
+        }
+    }
+    
+    handleTouchMove(e) {
+        e.preventDefault();
+        
+        if (e.touches.length === 1 && this.isDragging) {
+            const deltaX = e.touches[0].clientX - this.lastMouseX;
+            const deltaY = e.touches[0].clientY - this.lastMouseY;
+            
+            this.translateX += deltaX;
+            this.translateY += deltaY;
+            
+            this.constrainPosition();
+            this.updateTransform();
+            
+            this.lastMouseX = e.touches[0].clientX;
+            this.lastMouseY = e.touches[0].clientY;
+        } else if (e.touches.length === 2) {
+            const currentDistance = this.getTouchDistance(e.touches);
+            const scaleChange = currentDistance / this.initialDistance;
+            const newScale = Math.max(MAP_CONFIG.minZoom, Math.min(MAP_CONFIG.maxZoom, this.initialScale * scaleChange));
+            
+            this.scale = newScale;
+            this.zoomSlider.value = this.scale;
+            this.constrainPosition();
+            this.updateTransform();
+            this.updateZoomLevel();
+        }
+    }
+    
+    handleTouchEnd() {
+        this.isDragging = false;
+    }
+    
+    getTouchDistance(touches) {
+        const dx = touches[0].clientX - touches[1].clientX;
+        const dy = touches[0].clientY - touches[1].clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+    
+    // Zoom methods
+    zoomIn() {
+        this.scale = Math.min(MAP_CONFIG.maxZoom, this.scale + MAP_CONFIG.zoomStep);
+        this.zoomSlider.value = this.scale;
+        this.constrainPosition();
+        this.updateTransform();
+        this.updateZoomLevel();
+    }
+    
+    zoomOut() {
+        this.scale = Math.max(MAP_CONFIG.minZoom, this.scale - MAP_CONFIG.zoomStep);
+        this.zoomSlider.value = this.scale;
+        this.constrainPosition();
+        this.updateTransform();
+        this.updateZoomLevel();
+    }
+    
+    zoomToPoint(mouseX, mouseY, delta) {
+        const newScale = Math.max(MAP_CONFIG.minZoom, Math.min(MAP_CONFIG.maxZoom, this.scale + delta));
+        
+        if (newScale !== this.scale) {
+            const scaleDelta = newScale / this.scale;
+            
+            this.translateX = mouseX - scaleDelta * (mouseX - this.translateX);
+            this.translateY = mouseY - scaleDelta * (mouseY - this.translateY);
+            
+            this.scale = newScale;
+            this.zoomSlider.value = this.scale;
+            
+            this.constrainPosition();
+            this.updateTransform();
+            this.updateZoomLevel();
+        }
+    }
+    
+    zoomToPointAbsolute(mouseX, mouseY, targetZoom) {
+        const newScale = Math.max(MAP_CONFIG.minZoom, Math.min(MAP_CONFIG.maxZoom, targetZoom));
+        const scaleDelta = newScale / this.scale;
+        
+        this.translateX = mouseX - scaleDelta * (mouseX - this.translateX);
+        this.translateY = mouseY - scaleDelta * (mouseY - this.translateY);
+        
+        this.scale = newScale;
+        this.zoomSlider.value = this.scale;
+        
+        this.constrainPosition();
+        this.updateTransform();
+        this.updateZoomLevel();
+    }
+    
+    // Position and transform methods
+    constrainPosition() {
+        const containerRect = this.mapContainer.getBoundingClientRect();
+        const scaledWidth = this.mapWidth * this.scale;
+        const scaledHeight = this.mapHeight * this.scale;
+        
+        const minX = Math.min(0, containerRect.width - scaledWidth);
+        const maxX = Math.max(0, containerRect.width - scaledWidth);
+        const minY = Math.min(0, containerRect.height - scaledHeight);
+        const maxY = Math.max(0, containerRect.height - scaledHeight);
+        
+        this.translateX = Math.max(minX, Math.min(maxX, this.translateX));
+        this.translateY = Math.max(minY, Math.min(maxY, this.translateY));
+    }
+    
+    updateTransform() {
+        this.mapImage.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.scale})`;
+    }
+    
+    updateZoomLevel() {
+        if (this.zoomLevel) {
+            this.zoomLevel.textContent = `${Math.round(this.scale * 100)}%`;
+        }
+    }
+    
+    updateCoordinates(e) {
+        if (!this.coordinates) return;
+        
+        const rect = this.mapContainer.getBoundingClientRect();
+        const x = Math.round((e.clientX - rect.left - this.translateX) / this.scale);
+        const y = Math.round((e.clientY - rect.top - this.translateY) / this.scale);
+        this.coordinates.textContent = `X: ${x}, Y: ${y}`;
+    }
+    
+    centerMap() {
+        const containerRect = this.mapContainer.getBoundingClientRect();
+        this.translateX = (containerRect.width - this.mapWidth) / 2;
+        this.translateY = (containerRect.height - this.mapHeight) / 2;
+        this.constrainPosition();
+        this.updateTransform();
+    }
+    
+    resetView() {
+        this.scale = MAP_CONFIG.initialZoom;
+        this.zoomSlider.value = this.scale;
+        this.centerMap();
+        this.updateZoomLevel();
+    }
+    
+    handleResize() {
+        this.constrainPosition();
+        this.updateTransform();
+    }
+    
+    // Public API methods
+    panTo(x, y, animated = true) {
+        const containerRect = this.mapContainer.getBoundingClientRect();
+        this.translateX = containerRect.width / 2 - x * this.scale;
+        this.translateY = containerRect.height / 2 - y * this.scale;
+        this.constrainPosition();
+        this.updateTransform();
+    }
+    
+    zoomToMarker(markerId) {
+        const marker = this.markerManager.getMarkerById(markerId);
+        if (marker) {
+            this.zoomToPointAbsolute(
+                marker.x * this.scale + this.translateX,
+                marker.y * this.scale + this.translateY,
+                2
+            );
+            this.panTo(marker.x, marker.y);
+        }
+    }
+    
+    getCurrentBounds() {
+        const containerRect = this.mapContainer.getBoundingClientRect();
+        return {
+            left: -this.translateX / this.scale,
+            top: -this.translateY / this.scale,
+            right: (-this.translateX + containerRect.width) / this.scale,
+            bottom: (-this.translateY + containerRect.height) / this.scale
+        };
+    }
+    
+    isPointVisible(x, y) {
+        const bounds = this.getCurrentBounds();
+        return x >= bounds.left && x <= bounds.right && y >= bounds.top && y <= bounds.bottom;
+    }
+}
