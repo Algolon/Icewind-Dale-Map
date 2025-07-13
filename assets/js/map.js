@@ -4,8 +4,8 @@ class InteractiveMap {
         this.mapImage = document.getElementById('mapImage');
         this.coordinates = document.getElementById('coordinates');
         
-        // Map state
-        this.scale = 1; // Start at 100%
+        // Map state - START ZOOMED OUT
+        this.scale = this.calculateInitialZoom(); // Start zoomed out to fit screen
         this.translateX = 0;
         this.translateY = 0;
         this.isDragging = false;
@@ -17,9 +17,10 @@ class InteractiveMap {
         this.mapHeight = MAP_CONFIG.height;
         
         // Zoom settings
-        this.minZoom = 0.5; // 50% - see full map
+        this.minZoom = 0.1; // 10% - very zoomed out
         this.maxZoom = 3;   // 300% - detailed view
         this.zoomStep = 0.25; // 25% increments
+        this.wheelZoomSensitivity = 0.1; // Smooth wheel zooming
         
         // Initialize
         this.setupEventListeners();
@@ -31,7 +32,7 @@ class InteractiveMap {
             this.markerManager = new MarkerManager(this);
         }, 100);
         
-        console.log('Map initialized with proper z-index and boundaries');
+        console.log(`Map initialized: ${Math.round(this.scale * 100)}% zoom, centered`);
     }
     
     setupEventListeners() {
@@ -207,7 +208,7 @@ class InteractiveMap {
         this.mapContainer.style.cursor = 'grab';
     }
     
-    // FIXED wheel zoom
+    // FIXED wheel zoom - now works properly
     handleWheel(e) {
         e.preventDefault();
         
@@ -215,11 +216,14 @@ class InteractiveMap {
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
         
-        // Simple zoom in/out
-        if (e.deltaY < 0) {
-            this.zoomToPoint(mouseX, mouseY, this.scale + this.zoomStep);
-        } else {
-            this.zoomToPoint(mouseX, mouseY, this.scale - this.zoomStep);
+        // Calculate zoom direction and new scale
+        const zoomDirection = e.deltaY < 0 ? 1 : -1;
+        const zoomAmount = this.wheelZoomSensitivity * zoomDirection;
+        const newScale = Math.max(this.minZoom, Math.min(this.maxZoom, this.scale + zoomAmount));
+        
+        if (newScale !== this.scale) {
+            this.zoomToPoint(mouseX, mouseY, newScale);
+            console.log(`Wheel zoom to ${Math.round(newScale * 100)}%`);
         }
     }
     
@@ -348,6 +352,26 @@ class InteractiveMap {
         }
     }
     
+    // Calculate initial zoom to fit entire map on screen
+    calculateInitialZoom() {
+        const containerRect = this.mapContainer.getBoundingClientRect();
+        
+        // Calculate scale needed to fit map width and height
+        const scaleX = containerRect.width / this.mapWidth;
+        const scaleY = containerRect.height / this.mapHeight;
+        
+        // Use the smaller scale to ensure entire map fits
+        const fitScale = Math.min(scaleX, scaleY);
+        
+        // Make it slightly smaller for padding (90% of fit scale)
+        const initialScale = Math.max(this.minZoom, fitScale * 0.9);
+        
+        console.log(`Container: ${containerRect.width}x${containerRect.height}, Map: ${this.mapWidth}x${this.mapHeight}`);
+        console.log(`Calculated initial zoom: ${Math.round(initialScale * 100)}%`);
+        
+        return initialScale;
+    }
+    
     centerMap() {
         const containerRect = this.mapContainer.getBoundingClientRect();
         
@@ -355,19 +379,23 @@ class InteractiveMap {
         this.translateX = (containerRect.width - this.mapWidth * this.scale) / 2;
         this.translateY = (containerRect.height - this.mapHeight * this.scale) / 2;
         
+        console.log(`Centered map: translate(${Math.round(this.translateX)}, ${Math.round(this.translateY)})`);
         this.constrainPosition();
     }
     
     resetView() {
-        this.scale = 1;
+        this.scale = this.calculateInitialZoom();
         this.centerMap();
         this.updateTransform();
-        console.log('Reset to center view');
+        console.log('Reset to initial zoomed-out view');
     }
     
     handleResize() {
-        this.constrainPosition();
+        // Recalculate initial zoom on resize
+        this.scale = this.calculateInitialZoom();
+        this.centerMap();
         this.updateTransform();
+        console.log('Resized and recentered map');
     }
     
     // Public API methods
