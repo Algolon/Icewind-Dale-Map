@@ -24,12 +24,14 @@ class InteractiveMap {
         
         // Initialize
         this.setupEventListeners();
-        this.updateTransform();
         this.centerMap();
+        this.updateTransform();
         this.updateZoomLevel();
         
-        // Initialize marker manager
-        this.markerManager = new MarkerManager(this);
+        // Initialize marker manager AFTER map is set up
+        setTimeout(() => {
+            this.markerManager = new MarkerManager(this);
+        }, 100);
     }
     
     setupEventListeners() {
@@ -52,9 +54,8 @@ class InteractiveMap {
     setupZoomControls() {
         // Zoom slider
         this.zoomSlider.addEventListener('input', (e) => {
-            this.scale = parseFloat(e.target.value);
-            this.updateTransform();
-            this.updateZoomLevel();
+            const newScale = parseFloat(e.target.value);
+            this.zoomToCenter(newScale);
         });
         
         // Zoom buttons
@@ -84,10 +85,10 @@ class InteractiveMap {
             this.handleMouseUp();
         });
         
-        // Wheel zoom
+        // Wheel zoom - FIXED
         this.mapContainer.addEventListener('wheel', (e) => {
             this.handleWheel(e);
-        });
+        }, { passive: false });
         
         // Double click to zoom
         this.mapContainer.addEventListener('dblclick', (e) => {
@@ -110,11 +111,11 @@ class InteractiveMap {
     setupTouchEvents() {
         this.mapContainer.addEventListener('touchstart', (e) => {
             this.handleTouchStart(e);
-        });
+        }, { passive: false });
         
         this.mapContainer.addEventListener('touchmove', (e) => {
             this.handleTouchMove(e);
-        });
+        }, { passive: false });
         
         this.mapContainer.addEventListener('touchend', () => {
             this.handleTouchEnd();
@@ -202,6 +203,7 @@ class InteractiveMap {
         this.mapContainer.style.cursor = 'grab';
     }
     
+    // FIXED wheel zoom behavior
     handleWheel(e) {
         e.preventDefault();
         
@@ -209,8 +211,28 @@ class InteractiveMap {
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
         
-        const delta = e.deltaY > 0 ? -MAP_CONFIG.wheelZoomSensitivity : MAP_CONFIG.wheelZoomSensitivity;
-        this.zoomToPoint(mouseX, mouseY, delta);
+        // Calculate zoom direction and amount
+        const zoomDirection = e.deltaY < 0 ? 1 : -1;
+        const zoomFactor = 1 + (MAP_CONFIG.wheelZoomSensitivity * zoomDirection);
+        const newScale = Math.max(MAP_CONFIG.minZoom, Math.min(MAP_CONFIG.maxZoom, this.scale * zoomFactor));
+        
+        if (newScale !== this.scale) {
+            // Calculate the point in map coordinates before zoom
+            const mapX = (mouseX - this.translateX) / this.scale;
+            const mapY = (mouseY - this.translateY) / this.scale;
+            
+            // Update scale
+            this.scale = newScale;
+            this.zoomSlider.value = this.scale;
+            
+            // Calculate new translation to keep the mouse point stationary
+            this.translateX = mouseX - mapX * this.scale;
+            this.translateY = mouseY - mapY * this.scale;
+            
+            this.constrainPosition();
+            this.updateTransform();
+            this.updateZoomLevel();
+        }
     }
     
     handleDoubleClick(e) {
@@ -221,7 +243,7 @@ class InteractiveMap {
         const mouseY = e.clientY - rect.top;
         
         const targetZoom = this.scale < 2 ? 2 : 1;
-        this.zoomToPointAbsolute(mouseX, mouseY, targetZoom);
+        this.zoomToPoint(mouseX, mouseY, targetZoom);
     }
     
     // Touch event handlers
@@ -257,11 +279,15 @@ class InteractiveMap {
             const scaleChange = currentDistance / this.initialDistance;
             const newScale = Math.max(MAP_CONFIG.minZoom, Math.min(MAP_CONFIG.maxZoom, this.initialScale * scaleChange));
             
-            this.scale = newScale;
-            this.zoomSlider.value = this.scale;
-            this.constrainPosition();
-            this.updateTransform();
-            this.updateZoomLevel();
+            // Get center point of pinch
+            const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+            const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+            
+            const rect = this.mapContainer.getBoundingClientRect();
+            const touchX = centerX - rect.left;
+            const touchY = centerY - rect.top;
+            
+            this.zoomToPoint(touchX, touchY, newScale);
         }
     }
     
@@ -275,34 +301,39 @@ class InteractiveMap {
         return Math.sqrt(dx * dx + dy * dy);
     }
     
-    // Zoom methods
+    // FIXED zoom methods
     zoomIn() {
-        this.scale = Math.min(MAP_CONFIG.maxZoom, this.scale + MAP_CONFIG.zoomStep);
-        this.zoomSlider.value = this.scale;
-        this.constrainPosition();
-        this.updateTransform();
-        this.updateZoomLevel();
+        const newScale = Math.min(MAP_CONFIG.maxZoom, this.scale + MAP_CONFIG.zoomStep);
+        this.zoomToCenter(newScale);
     }
     
     zoomOut() {
-        this.scale = Math.max(MAP_CONFIG.minZoom, this.scale - MAP_CONFIG.zoomStep);
-        this.zoomSlider.value = this.scale;
-        this.constrainPosition();
-        this.updateTransform();
-        this.updateZoomLevel();
+        const newScale = Math.max(MAP_CONFIG.minZoom, this.scale - MAP_CONFIG.zoomStep);
+        this.zoomToCenter(newScale);
     }
     
-    zoomToPoint(mouseX, mouseY, delta) {
-        const newScale = Math.max(MAP_CONFIG.minZoom, Math.min(MAP_CONFIG.maxZoom, this.scale + delta));
+    zoomToCenter(newScale) {
+        const rect = this.mapContainer.getBoundingClientRect();
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        this.zoomToPoint(centerX, centerY, newScale);
+    }
+    
+    zoomToPoint(clientX, clientY, targetScale) {
+        const newScale = Math.max(MAP_CONFIG.minZoom, Math.min(MAP_CONFIG.maxZoom, targetScale));
         
         if (newScale !== this.scale) {
-            const scaleDelta = newScale / this.scale;
+            // Calculate the point in map coordinates before zoom
+            const mapX = (clientX - this.translateX) / this.scale;
+            const mapY = (clientY - this.translateY) / this.scale;
             
-            this.translateX = mouseX - scaleDelta * (mouseX - this.translateX);
-            this.translateY = mouseY - scaleDelta * (mouseY - this.translateY);
-            
+            // Update scale
             this.scale = newScale;
             this.zoomSlider.value = this.scale;
+            
+            // Calculate new translation to keep the point stationary
+            this.translateX = clientX - mapX * this.scale;
+            this.translateY = clientY - mapY * this.scale;
             
             this.constrainPosition();
             this.updateTransform();
@@ -310,31 +341,32 @@ class InteractiveMap {
         }
     }
     
-    zoomToPointAbsolute(mouseX, mouseY, targetZoom) {
-        const newScale = Math.max(MAP_CONFIG.minZoom, Math.min(MAP_CONFIG.maxZoom, targetZoom));
-        const scaleDelta = newScale / this.scale;
-        
-        this.translateX = mouseX - scaleDelta * (mouseX - this.translateX);
-        this.translateY = mouseY - scaleDelta * (mouseY - this.translateY);
-        
-        this.scale = newScale;
-        this.zoomSlider.value = this.scale;
-        
-        this.constrainPosition();
-        this.updateTransform();
-        this.updateZoomLevel();
-    }
-    
-    // Position and transform methods
+    // FIXED position constraint method
     constrainPosition() {
         const containerRect = this.mapContainer.getBoundingClientRect();
         const scaledWidth = this.mapWidth * this.scale;
         const scaledHeight = this.mapHeight * this.scale;
         
-        const minX = Math.min(0, containerRect.width - scaledWidth);
-        const maxX = Math.max(0, containerRect.width - scaledWidth);
-        const minY = Math.min(0, containerRect.height - scaledHeight);
-        const maxY = Math.max(0, containerRect.height - scaledHeight);
+        // Calculate bounds
+        let minX, maxX, minY, maxY;
+        
+        if (scaledWidth <= containerRect.width) {
+            // If image is smaller than container, center it
+            minX = maxX = (containerRect.width - scaledWidth) / 2;
+        } else {
+            // If image is larger than container, constrain to edges
+            minX = containerRect.width - scaledWidth;
+            maxX = 0;
+        }
+        
+        if (scaledHeight <= containerRect.height) {
+            // If image is smaller than container, center it
+            minY = maxY = (containerRect.height - scaledHeight) / 2;
+        } else {
+            // If image is larger than container, constrain to edges
+            minY = containerRect.height - scaledHeight;
+            maxY = 0;
+        }
         
         this.translateX = Math.max(minX, Math.min(maxX, this.translateX));
         this.translateY = Math.max(minY, Math.min(maxY, this.translateY));
@@ -356,21 +388,25 @@ class InteractiveMap {
         const rect = this.mapContainer.getBoundingClientRect();
         const x = Math.round((e.clientX - rect.left - this.translateX) / this.scale);
         const y = Math.round((e.clientY - rect.top - this.translateY) / this.scale);
-        this.coordinates.textContent = `X: ${x}, Y: ${y}`;
+        
+        // Only show coordinates if they're within the map bounds
+        if (x >= 0 && x <= this.mapWidth && y >= 0 && y <= this.mapHeight) {
+            this.coordinates.textContent = `X: ${x}, Y: ${y}`;
+        }
     }
     
     centerMap() {
         const containerRect = this.mapContainer.getBoundingClientRect();
-        this.translateX = (containerRect.width - this.mapWidth) / 2;
-        this.translateY = (containerRect.height - this.mapHeight) / 2;
+        this.translateX = (containerRect.width - this.mapWidth * this.scale) / 2;
+        this.translateY = (containerRect.height - this.mapHeight * this.scale) / 2;
         this.constrainPosition();
-        this.updateTransform();
     }
     
     resetView() {
         this.scale = MAP_CONFIG.initialZoom;
         this.zoomSlider.value = this.scale;
         this.centerMap();
+        this.updateTransform();
         this.updateZoomLevel();
     }
     
@@ -391,12 +427,12 @@ class InteractiveMap {
     zoomToMarker(markerId) {
         const marker = this.markerManager.getMarkerById(markerId);
         if (marker) {
-            this.zoomToPointAbsolute(
-                marker.x * this.scale + this.translateX,
-                marker.y * this.scale + this.translateY,
-                2
-            );
+            // First zoom to 2x
+            this.scale = 2;
+            this.zoomSlider.value = this.scale;
+            // Then pan to marker
             this.panTo(marker.x, marker.y);
+            this.updateZoomLevel();
         }
     }
     

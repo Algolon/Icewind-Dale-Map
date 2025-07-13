@@ -2,8 +2,7 @@
 class MapApplication {
     constructor() {
         this.map = null;
-        this.searchBox = null;
-        this.filterControls = null;
+        this.isInitialized = false;
         this.init();
     }
 
@@ -17,6 +16,14 @@ class MapApplication {
     }
 
     initializeApp() {
+        console.log('Initializing Icewind Dale Interactive Map...');
+        
+        // Check if required elements exist
+        if (!this.validateRequiredElements()) {
+            console.error('Required DOM elements not found!');
+            return;
+        }
+        
         // Initialize the main map
         this.map = new InteractiveMap();
         
@@ -28,12 +35,36 @@ class MapApplication {
         // Add custom event listeners
         this.setupCustomEvents();
         
+        this.isInitialized = true;
         console.log('Icewind Dale Interactive Map initialized successfully');
+        
+        // Debug info
+        setTimeout(() => {
+            if (this.map && this.map.markerManager) {
+                console.log(`Map loaded with ${this.map.markerManager.markers.length} markers`);
+                console.log(`Marker elements created: ${this.map.markerManager.markerElements.length}`);
+            }
+        }, 1000);
+    }
+
+    validateRequiredElements() {
+        const required = ['mapContainer', 'mapImage', 'zoomSlider', 'zoomIn', 'zoomOut'];
+        const missing = required.filter(id => !document.getElementById(id));
+        
+        if (missing.length > 0) {
+            console.error('Missing required elements:', missing);
+            return false;
+        }
+        
+        return true;
     }
 
     setupLegendInteractions() {
         const legend = document.querySelector('.legend');
-        if (!legend) return;
+        if (!legend) {
+            console.warn('Legend element not found');
+            return;
+        }
 
         // Make legend items clickable to toggle marker types
         const legendItems = legend.querySelectorAll('.legend-item');
@@ -70,7 +101,10 @@ class MapApplication {
     }
 
     toggleMarkerType(markerType, legendItem) {
-        if (!this.map || !this.map.markerManager) return;
+        if (!this.map || !this.map.markerManager) {
+            console.warn('Map or marker manager not available');
+            return;
+        }
 
         // Toggle markers
         this.map.markerManager.toggleMarkersByType(markerType);
@@ -91,6 +125,11 @@ class MapApplication {
                 return;
             }
 
+            // Don't interfere with map's own keyboard handling
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', '+', '-', '=', '0'].includes(e.key)) {
+                return;
+            }
+
             switch(e.key) {
                 case 'h':
                 case 'H':
@@ -100,7 +139,7 @@ class MapApplication {
                 case 'r':
                 case 'R':
                     e.preventDefault();
-                    this.map.resetView();
+                    if (this.map) this.map.resetView();
                     break;
                 case 'f':
                 case 'F':
@@ -192,22 +231,37 @@ class MapApplication {
     // Utility methods
     showHelp() {
         const helpText = `
-Keyboard Shortcuts:
+Icewind Dale Interactive Map - Controls:
+
+MOUSE/TOUCH:
+• Drag: Pan the map
+• Scroll wheel: Zoom in/out
+• Pinch gesture: Zoom (mobile)
+• Double-click: Zoom to location
+• Click markers: Show details
+
+KEYBOARD:
 • Arrow keys: Pan the map
-• + / -: Zoom in/out
-• 0: Reset view
+• + / - : Zoom in/out
+• 0: Reset view to center
 • H: Show this help
 • R: Reset to center view
 • F: Toggle fullscreen
-• L: Toggle legend
-• C: Toggle coordinates
+• L: Toggle legend visibility
+• C: Toggle coordinates display
 • Escape: Close popups
 
-Mouse/Touch Controls:
-• Drag: Pan the map
-• Scroll wheel: Zoom
-• Double-click: Zoom to location
-• Click markers: Show details
+LEGEND:
+• Click legend items to toggle marker types
+• Green: Towns and settlements
+• Blue: Points of interest
+• Purple: Dungeons (custom)
+• Orange: Camps (custom)
+• Red: Custom markers
+
+COORDINATES:
+• Hover over map to see X,Y coordinates
+• Use these coordinates to add new markers
         `;
         
         alert(helpText.trim());
@@ -215,7 +269,9 @@ Mouse/Touch Controls:
 
     toggleFullscreen() {
         if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen();
+            document.documentElement.requestFullscreen().catch(err => {
+                console.warn('Fullscreen not supported or denied:', err);
+            });
         } else {
             if (document.exitFullscreen) {
                 document.exitFullscreen();
@@ -226,14 +282,18 @@ Mouse/Touch Controls:
     toggleLegend() {
         const legend = document.querySelector('.legend');
         if (legend) {
-            legend.style.display = legend.style.display === 'none' ? 'block' : 'none';
+            const isHidden = legend.style.display === 'none';
+            legend.style.display = isHidden ? 'block' : 'none';
+            console.log(`Legend ${isHidden ? 'shown' : 'hidden'}`);
         }
     }
 
     toggleCoordinates() {
         const coordinates = document.querySelector('.coordinates');
         if (coordinates) {
-            coordinates.style.display = coordinates.style.display === 'none' ? 'block' : 'none';
+            const isHidden = coordinates.style.display === 'none';
+            coordinates.style.display = isHidden ? 'block' : 'none';
+            console.log(`Coordinates ${isHidden ? 'shown' : 'hidden'}`);
         }
     }
 
@@ -243,7 +303,10 @@ Mouse/Touch Controls:
     }
 
     addCustomMarker(x, y, name, description, type = 'custom') {
-        if (!this.map || !this.map.markerManager) return null;
+        if (!this.map || !this.map.markerManager) {
+            console.error('Map not initialized yet');
+            return null;
+        }
 
         const marker = {
             id: `custom-${Date.now()}`,
@@ -255,6 +318,7 @@ Mouse/Touch Controls:
             notable: 'Custom marker added by user'
         };
 
+        console.log('Adding custom marker:', marker);
         return this.map.markerManager.addMarker(marker);
     }
 
@@ -319,6 +383,28 @@ Mouse/Touch Controls:
         }
         return false;
     }
+
+    // Debug methods
+    debugInfo() {
+        if (!this.isInitialized) {
+            console.log('Map not yet initialized');
+            return;
+        }
+        
+        console.log('=== MAP DEBUG INFO ===');
+        console.log('Map scale:', this.map.scale);
+        console.log('Map translation:', { x: this.map.translateX, y: this.map.translateY });
+        console.log('Map dimensions:', { width: this.map.mapWidth, height: this.map.mapHeight });
+        console.log('Markers loaded:', this.map.markerManager.markers.length);
+        console.log('Marker elements:', this.map.markerManager.markerElements.length);
+        console.log('Current bounds:', this.map.getCurrentBounds());
+        
+        // List all markers
+        console.log('Markers:');
+        this.map.markerManager.markers.forEach(marker => {
+            console.log(`  - ${marker.name} (${marker.type}) at (${marker.x}, ${marker.y})`);
+        });
+    }
 }
 
 // Global app instance
@@ -326,15 +412,23 @@ let mapApp;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing map application...');
     mapApp = new MapApplication();
     
     // Make mapApp globally accessible for debugging and external scripts
     window.mapApp = mapApp;
+    
+    // Add debug function to window
+    window.debugMap = () => mapApp.debugInfo();
 });
 
 // Global utility functions for easy access
 window.addMarker = function(x, y, name, description, type = 'custom') {
-    return mapApp ? mapApp.addCustomMarker(x, y, name, description, type) : null;
+    if (!mapApp || !mapApp.isInitialized) {
+        console.error('Map not initialized yet. Please wait a moment and try again.');
+        return null;
+    }
+    return mapApp.addCustomMarker(x, y, name, description, type);
 };
 
 window.searchMap = function(query) {
@@ -352,6 +446,21 @@ window.exportMap = function() {
 window.importMap = function(data) {
     return mapApp ? mapApp.importMapData(data) : false;
 };
+
+// Add helpful console messages
+console.log('Icewind Dale Interactive Map - Available global functions:');
+console.log('- addMarker(x, y, name, description, type)');
+console.log('- searchMap(query)');
+console.log('- goTo(locationId)');
+console.log('- exportMap()');
+console.log('- importMap(data)');
+console.log('- debugMap()');
+console.log('Press H key for help once the map loads.');
+
+// Error handling for unhandled errors
+window.addEventListener('error', (e) => {
+    console.error('Unhandled error in map application:', e.error);
+});
 
 // Service Worker registration for offline functionality (optional)
 if ('serviceWorker' in navigator) {

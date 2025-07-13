@@ -9,7 +9,6 @@
       "description": "The largest settlement in Icewind Dale, a walled town that serves as the region's hub of trade and commerce.",
       "population": "1,200",
       "notable": "Market square, Town walls, Speaker Duvessa Shane",
-      "image": null,
       "customFields": {
         "speaker": "Duvessa Shane",
         "defenses": "Stone walls, town guard",
@@ -25,7 +24,6 @@
       "description": "A fishing town on the shores of Maer Dualdon, known for its hardy fishermen and knucklehead trout.",
       "population": "1,000",
       "notable": "Fishing fleet, The Luskan Arms tavern",
-      "image": null,
       "customFields": {
         "speaker": "Naerth Maxildanarr",
         "primaryIndustry": "Fishing",
@@ -41,7 +39,6 @@
       "description": "A small town on the southern shore of Lac Dinneshere, known for its castle ruins.",
       "population": "150",
       "notable": "Castle ruins, Northern Light inn",
-      "image": null,
       "customFields": {
         "speaker": "Ferrin Kastilar",
         "landmark": "Caer-Konig castle ruins"
@@ -56,7 +53,6 @@
       "description": "A small town on the shores of Lac Dinneshere, struggling with internal conflicts.",
       "population": "100",
       "notable": "Caer-Dineval castle, Cult presence",
-      "image": null,
       "customFields": {
         "speaker": "Crannoc Siever",
         "threat": "Cult of the Levistus"
@@ -71,7 +67,6 @@
       "description": "A town that serves as a gateway to the eastern reaches of Icewind Dale.",
       "population": "750",
       "notable": "The White Lady Inn, Ferry service",
-      "image": null,
       "customFields": {
         "speaker": "Danneth Waylen",
         "services": "Ferry, inn, supplies"
@@ -86,7 +81,6 @@
       "description": "A small town famous for its honey mead and beekeeping.",
       "population": "100",
       "notable": "Mead production, Beehives, Shrine of Bahamut",
-      "image": null,
       "customFields": {
         "speaker": "Kendrick Rielsbarrow",
         "specialty": "Honey mead brewing"
@@ -101,7 +95,6 @@
       "description": "A small knucklehead trout fishing village on the shore of Redwaters.",
       "population": "50",
       "notable": "Fishing, Redwaters lake",
-      "image": null,
       "customFields": {
         "speaker": "Edgra Durmoot",
         "primaryIndustry": "Fishing"
@@ -116,7 +109,6 @@
       "description": "A lumber town in the western part of Icewind Dale.",
       "population": "150",
       "notable": "Lumber mill, Wooden palisade",
-      "image": null,
       "customFields": {
         "speaker": "Dorbulgruf Shalescar",
         "primaryIndustry": "Lumber"
@@ -131,7 +123,6 @@
       "description": "A logging town surrounded by the Lonelywood Forest.",
       "population": "100",
       "notable": "Logging, Surrounded by forest",
-      "image": null,
       "customFields": {
         "speaker": "Nimsy Huddle",
         "environment": "Forest surrounded"
@@ -146,7 +137,6 @@
       "description": "A gem-mining town known for its valuable stones.",
       "population": "600",
       "notable": "Gem mining, Underground tunnels",
-      "image": null,
       "customFields": {
         "speaker": "Oarus Masthew",
         "primaryIndustry": "Gem mining"
@@ -160,7 +150,6 @@
       "name": "Kelvin's Cairn",
       "description": "The only mountain in Icewind Dale, rising 1,800 feet above the tundra. Home to various creatures and ancient secrets.",
       "notable": "Mountain peak, Caves, Verbeeg lair",
-      "image": null,
       "customFields": {
         "height": "1,800 feet",
         "inhabitants": "Verbeeg, various creatures"
@@ -174,7 +163,6 @@
       "name": "Reghed Glacier",
       "description": "A massive glacier that dominates the eastern part of Icewind Dale, constantly moving and reshaping the land.",
       "notable": "Glacier caves, Ancient ice, Tribal burial grounds",
-      "image": null,
       "customFields": {
         "type": "Glacier",
         "significance": "Ancient burial grounds"
@@ -188,7 +176,6 @@
       "name": "Sea of Moving Ice",
       "description": "A treacherous expanse of shifting ice floes and icebergs to the west of Icewind Dale.",
       "notable": "Ice floes, Icebergs, Dangerous navigation",
-      "image": null,
       "customFields": {
         "hazards": "Shifting ice, extreme cold",
         "navigation": "Extremely dangerous"
@@ -202,7 +189,6 @@
       "name": "Spine of the World",
       "description": "The southern mountain range that borders Icewind Dale, nearly impassable and full of dangers.",
       "notable": "Mountain range, Passes, Monster lairs",
-      "image": null,
       "customFields": {
         "type": "Mountain range",
         "passability": "Nearly impassable"
@@ -216,7 +202,6 @@
       "name": "Maer Dualdon",
       "description": "The largest lake in Icewind Dale, source of knucklehead trout and freshwater.",
       "notable": "Largest lake, Knucklehead trout, Freshwater source",
-      "image": null,
       "customFields": {
         "type": "Lake",
         "size": "Largest in Icewind Dale"
@@ -230,7 +215,6 @@
       "name": "Lac Dinneshere",
       "description": "A deep, cold lake known for its excellent fishing and dangerous depths.",
       "notable": "Deep lake, Excellent fishing, Cold waters",
-      "image": null,
       "customFields": {
         "type": "Lake",
         "characteristics": "Deep and cold"
@@ -244,10 +228,178 @@
       "name": "Redwaters",
       "description": "A smaller lake with reddish water, possibly from mineral deposits.",
       "notable": "Red-colored water, Mineral deposits",
-      "image": null,
       "customFields": {
         "type": "Lake",
         "uniqueFeature": "Red-colored water"
+      }
+    },
+    {
+      "id": "id-ascendant",
+      "x": 3200,
+      "y": 1200,
+      "type": "dungeon",
+      "name": "Id Ascendant",
+      "description": "A psionic research facility hidden beneath the ice, home to dangerous experiments.",
+      "notable": "Psionic experiments, Mind flayers, Hidden entrance",
+      "customFields": {
+        "dangerLevel": "Very High",
+        "primaryThreat": "Mind flayers"
+      }
+    },
+    {
+      "id": "ythryn",
+      "x": 4800,
+      "y": 600,
+      "type": "dungeon",
+      "name": "Ythryn",
+      "description": "The lost Netherese city, frozen in time within the Reghed Glacier.",
+      "notable": "Ancient magic, Netherese ruins, Powerful artifacts",
+      "customFields": {
+        "origin": "Netherese",
+        "treasures": "Powerful magical artifacts"
+      }
+    },
+    {
+      "id": "caves-of-hunger",
+      "x": 2600,
+      "y": 1300,
+      "type": "dungeon",
+      "name": "Caves of Hunger",
+      "description": "A network of caverns beneath Kelvin's Cairn, home to unspeakable horrors.",
+      "notable": "Cave system, Monsters, Hidden treasures",
+      "customFields": {
+        "location": "Beneath Kelvin's Cairn",
+        "primaryThreat": "Various monsters"
+      }
+    },
+    {
+      "id": "black-cabin",
+      "x": 1300,
+      "y": 1400,
+      "type": "poi",
+      "name": "Black Cabin",
+      "description": "A mysterious cabin in the Lonelywood forest, home to strange magic.",
+      "notable": "Magical experiments, Isolated location, Dark secrets",
+      "customFields": {
+        "mystery": "Dark magical experiments",
+        "isolation": "Deep in Lonelywood forest"
+      }
+    },
+    {
+      "id": "dark-duchess",
+      "x": 1900,
+      "y": 1900,
+      "type": "poi",
+      "name": "Dark Duchess",
+      "description": "A shipwreck on the shores of Maer Dualdon, now a landmark and source of salvage.",
+      "notable": "Shipwreck, Salvage, Local landmark",
+      "customFields": {
+        "type": "Shipwreck",
+        "status": "Salvageable"
+      }
+    },
+    {
+      "id": "tribe-of-elk",
+      "x": 3500,
+      "y": 2800,
+      "type": "camp",
+      "name": "Tribe of the Elk",
+      "description": "A nomadic Reghed tribe that follows the great elk herds across the tundra.",
+      "notable": "Nomadic tribe, Elk herders, Seasonal migration",
+      "customFields": {
+        "lifestyle": "Nomadic",
+        "animalCompanion": "Elk herds"
+      }
+    },
+    {
+      "id": "tribe-of-wolf",
+      "x": 3800,
+      "y": 2400,
+      "type": "camp",
+      "name": "Tribe of the Wolf",
+      "description": "A fierce Reghed tribe known for their wolf companions and hunting prowess.",
+      "notable": "Wolf companions, Hunters, Fierce warriors",
+      "customFields": {
+        "reputation": "Fierce warriors",
+        "animalCompanion": "Wolves"
+      }
+    },
+    {
+      "id": "tribe-of-bear",
+      "x": 4200,
+      "y": 2600,
+      "type": "camp",
+      "name": "Tribe of the Bear",
+      "description": "The largest and most powerful of the Reghed tribes, known for their strength.",
+      "notable": "Largest tribe, Great strength, Bear totems",
+      "customFields": {
+        "size": "Largest Reghed tribe",
+        "animalTotem": "Bear"
+      }
+    },
+    {
+      "id": "tribe-of-tiger",
+      "x": 3600,
+      "y": 2200,
+      "type": "camp",
+      "name": "Tribe of the Tiger",
+      "description": "A cunning Reghed tribe that values stealth and strategy over brute force.",
+      "notable": "Stealth tactics, Strategic thinking, Tiger spirits",
+      "customFields": {
+        "specialty": "Stealth and strategy",
+        "animalSpirit": "Tiger"
+      }
+    },
+    {
+      "id": "ten-trail",
+      "x": 2200,
+      "y": 1800,
+      "type": "poi",
+      "name": "Ten-Trail",
+      "description": "The main road connecting the Ten-Towns, well-traveled but dangerous in winter.",
+      "notable": "Main road, Trade route, Winter dangers",
+      "customFields": {
+        "type": "Trade route",
+        "seasonalHazards": "Winter storms"
+      }
+    },
+    {
+      "id": "eastway",
+      "x": 2800,
+      "y": 1600,
+      "type": "poi",
+      "name": "Eastway",
+      "description": "A dangerous path leading east toward the Reghed Glacier and beyond.",
+      "notable": "Eastern route, Glacier access, Dangerous travel",
+      "customFields": {
+        "destination": "Reghed Glacier",
+        "difficulty": "Very dangerous"
+      }
+    },
+    {
+      "id": "dwarven-valley",
+      "x": 2800,
+      "y": 3200,
+      "type": "poi",
+      "name": "Dwarven Valley",
+      "description": "A hidden valley in the Spine of the World, home to a small dwarven community.",
+      "notable": "Hidden valley, Dwarven settlement, Mountain refuge",
+      "customFields": {
+        "inhabitants": "Dwarves",
+        "accessibility": "Hidden, difficult to find"
+      }
+    },
+    {
+      "id": "jarlmoot",
+      "x": 3400,
+      "y": 2600,
+      "type": "poi",
+      "name": "Jarlmoot",
+      "description": "Ancient meeting grounds where the Reghed tribes gather for important ceremonies.",
+      "notable": "Tribal meetings, Ancient grounds, Sacred ceremonies",
+      "customFields": {
+        "purpose": "Tribal ceremonies",
+        "significance": "Sacred to Reghed tribes"
       }
     }
   ]

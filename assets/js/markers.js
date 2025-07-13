@@ -4,46 +4,81 @@ class MarkerManager {
         this.markers = [];
         this.markerElements = [];
         this.activePopup = null;
+        
+        // Load markers with proper error handling
         this.loadMarkers();
     }
 
     async loadMarkers() {
         try {
+            console.log('Loading markers from JSON file...');
             const response = await fetch(MAP_CONFIG.paths.markerData);
+            
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
+            
             const data = await response.json();
+            
+            if (!data.markers || !Array.isArray(data.markers)) {
+                throw new Error('Invalid JSON structure - missing markers array');
+            }
+            
             this.markers = data.markers;
-            this.createMarkerElements();
+            console.log(`Successfully loaded ${this.markers.length} markers from JSON file`);
+            
         } catch (error) {
-            console.error('Failed to load markers:', error);
-            // Fallback to embedded markers if external file fails
-            this.createMarkerElements();
+            console.warn('Failed to load external markers:', error.message);
+            console.log('Using minimal fallback markers...');
+            
+            // Minimal fallback - just a few key locations
+            this.markers = this.getMinimalFallback();
         }
+        
+        // Create marker elements
+        this.createMarkerElements();
+        
+        // Dispatch custom event
+        document.dispatchEvent(new CustomEvent('markersLoaded', {
+            detail: { count: this.markers.length }
+        }));
     }
 
     createMarkerElements() {
         // Clear existing markers
         this.clearMarkers();
 
-        // Use embedded markers if no external data loaded
-        if (this.markers.length === 0) {
-            this.markers = this.getEmbeddedMarkers();
+        if (!this.markers || this.markers.length === 0) {
+            console.warn('No markers to create');
+            return;
         }
 
-        this.markers.forEach(markerData => {
-            this.createMarker(markerData);
+        console.log(`Creating ${this.markers.length} marker elements...`);
+        
+        this.markers.forEach((markerData, index) => {
+            try {
+                this.createMarker(markerData);
+            } catch (error) {
+                console.error(`Failed to create marker ${index}:`, error, markerData);
+            }
         });
+        
+        console.log(`Successfully created ${this.markerElements.length} marker elements`);
     }
 
     createMarker(markerData) {
+        // Validate marker data
+        if (!markerData || typeof markerData.x !== 'number' || typeof markerData.y !== 'number') {
+            console.error('Invalid marker data:', markerData);
+            return;
+        }
+
         const marker = document.createElement('div');
-        marker.className = `marker ${markerData.type}`;
+        marker.className = `marker ${markerData.type || 'custom'}`;
         marker.style.left = `${markerData.x}px`;
         marker.style.top = `${markerData.y}px`;
-        marker.dataset.markerId = markerData.id;
-        marker.setAttribute('aria-label', `${markerData.name} - Click for details`);
+        marker.dataset.markerId = markerData.id || `marker-${Date.now()}`;
+        marker.setAttribute('aria-label', `${markerData.name || 'Unnamed location'} - Click for details`);
         marker.setAttribute('role', 'button');
         marker.setAttribute('tabindex', '0');
 
@@ -74,8 +109,11 @@ class MarkerManager {
             }
         });
 
+        // Add to map container
         this.map.mapContainer.appendChild(marker);
         this.markerElements.push({ element: marker, data: markerData });
+        
+        console.log(`Created marker: ${markerData.name} at (${markerData.x}, ${markerData.y})`);
     }
 
     showPopup(markerData, x, y) {
@@ -89,8 +127,8 @@ class MarkerManager {
 
         let content = `
             <button class="close-btn" aria-label="Close popup">&times;</button>
-            <h3 id="popup-title">${markerData.name}</h3>
-            <p>${markerData.description}</p>
+            <h3 id="popup-title">${markerData.name || 'Unnamed Location'}</h3>
+            <p>${markerData.description || 'No description available.'}</p>
         `;
 
         // Add population if available
@@ -113,7 +151,7 @@ class MarkerManager {
 
         // Add image if available
         if (markerData.image) {
-            content += `<img src="${markerData.image}" alt="${markerData.name}" />`;
+            content += `<img src="${markerData.image}" alt="${markerData.name}" loading="lazy" />`;
         }
 
         popup.innerHTML = content;
@@ -149,6 +187,11 @@ class MarkerManager {
             }
         };
         document.addEventListener('keydown', escapeHandler);
+
+        // Dispatch custom event
+        document.dispatchEvent(new CustomEvent('markerClicked', {
+            detail: { marker: markerData }
+        }));
     }
 
     positionPopup(popup, x, y) {
@@ -156,12 +199,12 @@ class MarkerManager {
         const viewWidth = window.innerWidth;
         const viewHeight = window.innerHeight;
 
-        let popupX = x + MAP_CONFIG.popupOffset;
+        let popupX = x + (MAP_CONFIG.popupOffset || 10);
         let popupY = y - rect.height / 2;
 
         // Keep popup in viewport
         if (popupX + rect.width > viewWidth) {
-            popupX = x - rect.width - MAP_CONFIG.popupOffset;
+            popupX = x - rect.width - (MAP_CONFIG.popupOffset || 10);
         }
         if (popupY < 10) {
             popupY = 10;
@@ -189,14 +232,25 @@ class MarkerManager {
     }
 
     addMarker(markerData) {
+        // Validate and set defaults
+        const marker = {
+            id: markerData.id || `custom-${Date.now()}`,
+            x: markerData.x,
+            y: markerData.y,
+            type: markerData.type || 'custom',
+            name: markerData.name || 'Unnamed Location',
+            description: markerData.description || 'No description provided.',
+            ...markerData
+        };
+        
         // Add to data array
-        this.markers.push(markerData);
+        this.markers.push(marker);
         
         // Create visual element
-        this.createMarker(markerData);
+        this.createMarker(marker);
         
-        // Return marker data for further manipulation
-        return markerData;
+        console.log('Added custom marker:', marker.name);
+        return marker;
     }
 
     removeMarker(markerId) {
@@ -208,6 +262,7 @@ class MarkerManager {
         if (markerElement) {
             markerElement.element.remove();
             this.markerElements = this.markerElements.filter(marker => marker.data.id !== markerId);
+            console.log('Removed marker:', markerId);
         }
     }
 
@@ -220,6 +275,7 @@ class MarkerManager {
             // Remove old element and create new one
             this.removeMarker(markerId);
             this.createMarker(this.markers[markerIndex]);
+            console.log('Updated marker:', markerId);
         }
     }
 
@@ -259,62 +315,14 @@ class MarkerManager {
         }
     }
 
-    // Fallback embedded markers (same as original)
-    getEmbeddedMarkers() {
-        return [
-            {
-                id: 'bryn-shander',
-                x: 2100, y: 1900,
-                type: 'town',
-                name: 'Bryn Shander',
-                description: 'The largest settlement in Icewind Dale, a walled town that serves as the region\'s hub of trade and commerce.',
-                population: '1,200',
-                notable: 'Market square, Town walls, Speaker Duvessa Shane'
-            },
-            {
-                id: 'targos',
-                x: 1850, y: 1950,
-                type: 'town',
-                name: 'Targos',
-                description: 'A fishing town on the shores of Maer Dualdon, known for its hardy fishermen and knucklehead trout.',
-                population: '1,000',
-                notable: 'Fishing fleet, The Luskan Arms tavern'
-            },
-            {
-                id: 'caer-konig',
-                x: 2800, y: 1650,
-                type: 'town',
-                name: 'Caer-Konig',
-                description: 'A small town on the southern shore of Lac Dinneshere, known for its castle ruins.',
-                population: '150',
-                notable: 'Castle ruins, Northern Light inn'
-            },
-            {
-                id: 'kelvins-cairn',
-                x: 2400, y: 1400,
-                type: 'poi',
-                name: 'Kelvin\'s Cairn',
-                description: 'The only mountain in Icewind Dale, rising 1,800 feet above the tundra. Home to various creatures and ancient secrets.',
-                notable: 'Mountain peak, Caves, Verbeeg lair'
-            },
-            {
-                id: 'reghed-glacier',
-                x: 4500, y: 800,
-                type: 'poi',
-                name: 'Reghed Glacier',
-                description: 'A massive glacier that dominates the eastern part of Icewind Dale, constantly moving and reshaping the land.',
-                notable: 'Glacier caves, Ancient ice, Tribal burial grounds'
-            }
-        ];
-    }
-
     // Search functionality
     searchMarkers(query) {
         const searchTerm = query.toLowerCase();
         return this.markers.filter(marker => 
             marker.name.toLowerCase().includes(searchTerm) ||
             marker.description.toLowerCase().includes(searchTerm) ||
-            marker.type.toLowerCase().includes(searchTerm)
+            marker.type.toLowerCase().includes(searchTerm) ||
+            (marker.notable && marker.notable.toLowerCase().includes(searchTerm))
         );
     }
 
@@ -330,6 +338,7 @@ class MarkerManager {
             if (data.markers && Array.isArray(data.markers)) {
                 this.markers = data.markers;
                 this.createMarkerElements();
+                console.log(`Imported ${this.markers.length} markers`);
                 return true;
             }
             return false;
@@ -337,5 +346,57 @@ class MarkerManager {
             console.error('Failed to import markers:', error);
             return false;
         }
+    }
+
+    // Reload markers from JSON file
+    async reloadMarkers() {
+        console.log('Reloading markers...');
+        await this.loadMarkers();
+    }
+
+    // Get statistics
+    getStats() {
+        const stats = {
+            total: this.markers.length,
+            byType: {}
+        };
+
+        this.markers.forEach(marker => {
+            stats.byType[marker.type] = (stats.byType[marker.type] || 0) + 1;
+        });
+
+        return stats;
+    }
+
+    // MINIMAL fallback - only essential locations if JSON fails
+    getMinimalFallback() {
+        return [
+            {
+                id: 'bryn-shander',
+                x: 2100, y: 1900,
+                type: 'town',
+                name: 'Bryn Shander',
+                description: 'The largest settlement in Icewind Dale.',
+                population: '1,200',
+                notable: 'Trade hub, Town walls'
+            },
+            {
+                id: 'targos',
+                x: 1850, y: 1950,
+                type: 'town',
+                name: 'Targos',
+                description: 'A fishing town on Maer Dualdon.',
+                population: '1,000',
+                notable: 'Fishing fleet'
+            },
+            {
+                id: 'kelvins-cairn',
+                x: 2400, y: 1400,
+                type: 'poi',
+                name: 'Kelvin\'s Cairn',
+                description: 'The only mountain in Icewind Dale.',
+                notable: 'Mountain peak, Caves'
+            }
+        ];
     }
 }
