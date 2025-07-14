@@ -3,66 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Icewind Dale Interactive Map</title>
-    <meta name="description" content="Interactive D&D map of Icewind Dale with locations, towns, and points of interest">
-    <meta name="keywords" content="D&D, Dungeons and Dragons, Icewind Dale, interactive map">
-    
-    <!-- Stylesheets -->
+    <title>D&D Interactive Map - Icewind Dale</title>
     <link rel="stylesheet" href="assets/css/styles.css">
 </head>
 <body>
-    <div class="map-container" id="mapContainer">
-        <!-- IMPORTANT: Replace this with your actual map image -->
-        <img src="assets/images/map.jpg" 
-             alt="Icewind Dale Map" 
-             class="map-image" 
-             id="mapImage"
-             draggable="false">
-        <!-- Markers will be added here dynamically -->
-    </div>
-
-    <!-- SIMPLIFIED: Only zoom buttons, no slider -->
-    <div class="controls">
-        <div class="zoom-control">
-            <div class="zoom-buttons">
-                <button class="zoom-btn" id="zoomOut" aria-label="Zoom out" title="Zoom Out (-)">−</button>
-                <button class="zoom-btn" id="zoomIn" aria-label="Zoom in" title="Zoom In (+)">+</button>
-            </div>
+    <div id="map-container">
+        <div id="map-viewport">
+            <img id="map-image" src="map.jpg" alt="Icewind Dale Map">
+            <div id="marker-layer"></div>
         </div>
     </div>
 
-    <div class="legend">
-        <h4>Legend</h4>
-        <div class="legend-item">
-            <div class="legend-marker" style="background: #4CAF50;"></div>
-            <span>Towns</span>
+    <div id="controls">
+        <div class="control-group zoom-controls">
+            <button class="btn" id="zoom-in" aria-label="Zoom in">+</button>
+            <button class="btn" id="zoom-out" aria-label="Zoom out">−</button>
         </div>
-        <div class="legend-item">
-            <div class="legend-marker" style="background: #2196F3;"></div>
-            <span>Points of Interest</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-marker" style="background: #9C27B0;"></div>
-            <span>Dungeons</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-marker" style="background: #FF9800;"></div>
-            <span>Camps</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-marker" style="background: #ff4444;"></div>
-            <span>Custom Markers</span>
+        <div class="control-group">
+            <div id="coordinates">X: 0, Y: 0</div>
         </div>
     </div>
 
-    <div class="coordinates" id="coordinates">
-        X: 0, Y: 0
-    </div>
+    <div class="popup" id="popup"></div>
 
-    <!-- Scripts in correct order -->
+    <!-- Scripts -->
     <script src="assets/js/config.js"></script>
-    <script src="assets/js/markers.js"></script>
     <script src="assets/js/map.js"></script>
+    <script src="assets/js/markers.js"></script>
     <script src="assets/js/app.js"></script>
 </body>
 </html>

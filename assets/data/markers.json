@@ -1,194 +1,249 @@
-{
-  "markers": [
+[
     {
-      "id": "bryn-shander",
-      "x": 2100,
-      "y": 1900,
-      "type": "town",
-      "name": "Bryn Shander",
-      "description": "The largest settlement in Icewind Dale, a walled town that serves as the region's hub of trade and commerce.",
-      "population": "1,200",
-      "notable": "Market square, Town walls, Speaker Duvessa Shane"
+        "id": "bryn-shander",
+        "x": 3000,
+        "y": 2100,
+        "type": "town",
+        "name": "Bryn Shander",
+        "description": "The largest of the Ten-Towns and unofficial capital. Population: 1,200.",
+        "details": {
+            "speaker": "Duvessa Shane",
+            "population": 1200,
+            "notable": "Town Hall, The Northlook Inn, Blackiron Blades"
+        }
     },
     {
-      "id": "targos",
-      "x": 1850,
-      "y": 1950,
-      "type": "town",
-      "name": "Targos",
-      "description": "A fishing town on the shores of Maer Dualdon, known for its hardy fishermen and knucklehead trout.",
-      "population": "1,000",
-      "notable": "Fishing fleet, The Luskan Arms tavern"
+        "id": "targos",
+        "x": 3300,
+        "y": 1900,
+        "type": "town",
+        "name": "Targos",
+        "description": "Second largest town, known for fishing and rivalry with Bryn Shander. Population: 1,000.",
+        "details": {
+            "speaker": "Naerth Maxildanarr",
+            "population": 1000,
+            "notable": "The Luskan Arms, Three Flags Sailing, Town Militia"
+        }
     },
     {
-      "id": "caer-konig",
-      "x": 2800,
-      "y": 1650,
-      "type": "town",
-      "name": "Caer-Konig",
-      "description": "A small town on the southern shore of Lac Dinneshere, known for its castle ruins.",
-      "population": "150",
-      "notable": "Castle ruins, Northern Light inn"
+        "id": "easthaven",
+        "x": 3500,
+        "y": 2300,
+        "type": "town",
+        "name": "Easthaven",
+        "description": "Eastern town on Lac Dinneshere, starting point for many expeditions. Population: 750.",
+        "details": {
+            "speaker": "Danneth Waylen",
+            "population": 750,
+            "notable": "White Lady Inn, Easthaven Ferry, Town Hall"
+        }
     },
     {
-      "id": "caer-dineval",
-      "x": 2600,
-      "y": 1800,
-      "type": "town",
-      "name": "Caer-Dineval",
-      "description": "A small town on the shores of Lac Dinneshere, struggling with internal conflicts.",
-      "population": "100",
-      "notable": "Caer-Dineval castle, Cult presence"
+        "id": "caer-dineval",
+        "x": 2700,
+        "y": 2000,
+        "type": "town",
+        "name": "Caer-Dineval",
+        "description": "Isolated town ruled by the mysterious Kadroth. Population: 100.",
+        "details": {
+            "speaker": "Crannoc Siever",
+            "population": 100,
+            "notable": "The Caer, Dinev's Rest tavern"
+        }
     },
     {
-      "id": "easthaven",
-      "x": 2400,
-      "y": 1700,
-      "type": "town",
-      "name": "Easthaven",
-      "description": "A town that serves as a gateway to the eastern reaches of Icewind Dale.",
-      "population": "750",
-      "notable": "The White Lady Inn, Ferry service"
+        "id": "caer-konig",
+        "x": 2500,
+        "y": 1800,
+        "type": "town",
+        "name": "Caer-Konig",
+        "description": "Northern town near Kelvin's Cairn. Population: 150.",
+        "details": {
+            "speaker": "Trovus",
+            "population": 150,
+            "notable": "The Northern Light inn, Hook, Line, and Sinker tavern"
+        }
     },
     {
-      "id": "good-mead",
-      "x": 2200,
-      "y": 2100,
-      "type": "town",
-      "name": "Good Mead",
-      "description": "A small town famous for its honey mead and beekeeping.",
-      "population": "100",
-      "notable": "Mead production, Beehives"
+        "id": "termalaine",
+        "x": 3200,
+        "y": 2500,
+        "type": "town",
+        "name": "Termalaine",
+        "description": "Mining town famous for its gem mines. Population: 600.",
+        "details": {
+            "speaker": "Oarus Masthew",
+            "population": 600,
+            "notable": "The Blue Clam tavern, Tourmaline mines"
+        }
     },
     {
-      "id": "dougan-hole",
-      "x": 2000,
-      "y": 2200,
-      "type": "town",
-      "name": "Dougan's Hole",
-      "description": "A small knucklehead trout fishing village on the shore of Redwaters.",
-      "population": "50",
-      "notable": "Fishing, Redwaters lake"
+        "id": "lonelywood",
+        "x": 2300,
+        "y": 2400,
+        "type": "town",
+        "name": "Lonelywood",
+        "description": "Westernmost town, gateway to the Lonelywood forest. Population: 100.",
+        "details": {
+            "speaker": "Nimsy Huddle",
+            "population": 100,
+            "notable": "The Lucky Liar tavern, Ramshackle inn"
+        }
     },
     {
-      "id": "bremen",
-      "x": 1700,
-      "y": 1800,
-      "type": "town",
-      "name": "Bremen",
-      "description": "A lumber town in the western part of Icewind Dale.",
-      "population": "150",
-      "notable": "Lumber mill, Wooden palisade"
+        "id": "bremen",
+        "x": 3100,
+        "y": 1700,
+        "type": "town",
+        "name": "Bremen",
+        "description": "Small fishing town on the western shore. Population: 150.",
+        "details": {
+            "speaker": "Dorbulgruf Shalescar",
+            "population": 150,
+            "notable": "Buried Treasures inn, Five-Tavern Center"
+        }
     },
     {
-      "id": "lonelywood",
-      "x": 1400,
-      "y": 1600,
-      "type": "town",
-      "name": "Lonelywood",
-      "description": "A logging town surrounded by the Lonelywood Forest.",
-      "population": "100",
-      "notable": "Logging, Forest surrounded"
+        "id": "dougan-hole",
+        "x": 2900,
+        "y": 2600,
+        "type": "town",
+        "name": "Dougan's Hole",
+        "description": "Smallest of the Ten-Towns. Population: 50.",
+        "details": {
+            "speaker": "Edgra Durmoot",
+            "population": 50,
+            "notable": "Twenty Stones of Thruun"
+        }
     },
     {
-      "id": "termalaine",
-      "x": 2000,
-      "y": 1700,
-      "type": "town",
-      "name": "Termalaine",
-      "description": "A gem-mining town known for its valuable stones.",
-      "population": "600",
-      "notable": "Gem mining, Underground tunnels"
+        "id": "good-mead",
+        "x": 3400,
+        "y": 2100,
+        "type": "town",
+        "name": "Good Mead",
+        "description": "Known for its honey mead brewery. Population: 100.",
+        "details": {
+            "speaker": "Kendrick Rielsbarrow",
+            "population": 100,
+            "notable": "The Mead Hall, Good Mead's brewery"
+        }
     },
     {
-      "id": "kelvins-cairn",
-      "x": 2400,
-      "y": 1400,
-      "type": "poi",
-      "name": "Kelvin's Cairn",
-      "description": "The only mountain in Icewind Dale, rising 1,800 feet above the tundra.",
-      "notable": "Mountain peak, Caves, Verbeeg lair"
+        "id": "kelvin-cairn",
+        "x": 2600,
+        "y": 1600,
+        "type": "poi",
+        "name": "Kelvin's Cairn",
+        "description": "Tallest mountain in Icewind Dale, home to dwarven valley.",
+        "details": {
+            "height": "1,000 feet",
+            "notable": "Dwarven Valley, Mountain goats, Avalanche risks"
+        }
     },
     {
-      "id": "reghed-glacier",
-      "x": 4500,
-      "y": 800,
-      "type": "poi",
-      "name": "Reghed Glacier",
-      "description": "A massive glacier that dominates the eastern part of Icewind Dale.",
-      "notable": "Glacier caves, Ancient ice, Tribal burial grounds"
+        "id": "reghed-glacier",
+        "x": 4000,
+        "y": 1200,
+        "type": "poi",
+        "name": "Reghed Glacier",
+        "description": "Massive glacier, beneath lies the lost city of Ythryn.",
+        "details": {
+            "danger": "Extreme cold, Crevasses, Ice caves"
+        }
     },
     {
-      "id": "maer-dualdon",
-      "x": 2000,
-      "y": 1850,
-      "type": "poi",
-      "name": "Maer Dualdon",
-      "description": "The largest lake in Icewind Dale, source of knucklehead trout.",
-      "notable": "Largest lake, Knucklehead trout, Freshwater source"
+        "id": "maer-dualdon",
+        "x": 2800,
+        "y": 2200,
+        "type": "poi",
+        "name": "Maer Dualdon",
+        "description": "Largest of the three lakes, deepest and most dangerous.",
+        "details": {
+            "depth": "Unknown, possibly bottomless",
+            "creatures": "Knucklehead trout, Lake monster rumors"
+        }
     },
     {
-      "id": "lac-dinneshere",
-      "x": 2700,
-      "y": 1700,
-      "type": "poi",
-      "name": "Lac Dinneshere",
-      "description": "A deep, cold lake known for its excellent fishing.",
-      "notable": "Deep lake, Excellent fishing, Cold waters"
+        "id": "lac-dinneshere",
+        "x": 3600,
+        "y": 2400,
+        "type": "poi",
+        "name": "Lac Dinneshere",
+        "description": "Eastern lake, known for excellent fishing.",
+        "details": {
+            "notable": "Caer on eastern shore, Good fishing spots"
+        }
     },
     {
-      "id": "redwaters",
-      "x": 2100,
-      "y": 2150,
-      "type": "poi",
-      "name": "Redwaters",
-      "description": "A smaller lake with reddish water from mineral deposits.",
-      "notable": "Red-colored water, Mineral deposits"
+        "id": "redwaters",
+        "x": 3200,
+        "y": 2000,
+        "type": "poi",
+        "name": "Redwaters",
+        "description": "Smallest lake, named for iron deposits that tint the water.",
+        "details": {
+            "notable": "Iron deposits, Unique red coloration"
+        }
     },
     {
-      "id": "ythryn",
-      "x": 4800,
-      "y": 600,
-      "type": "dungeon",
-      "name": "Ythryn",
-      "description": "The lost Netherese city, frozen in time within the Reghed Glacier.",
-      "notable": "Ancient magic, Netherese ruins, Powerful artifacts"
+        "id": "ythryn",
+        "x": 4200,
+        "y": 1000,
+        "type": "dungeon",
+        "name": "Ythryn",
+        "description": "Lost Netherese city buried in the Reghed Glacier.",
+        "details": {
+            "danger": "Extreme",
+            "treasures": "Ancient magic, Netherese artifacts"
+        }
     },
     {
-      "id": "id-ascendant",
-      "x": 3200,
-      "y": 1200,
-      "type": "dungeon",
-      "name": "Id Ascendant",
-      "description": "A psionic research facility hidden beneath the ice.",
-      "notable": "Psionic experiments, Mind flayers, Hidden entrance"
+        "id": "id-ascendant",
+        "x": 1800,
+        "y": 2800,
+        "type": "dungeon",
+        "name": "Id Ascendant",
+        "description": "Crashed nautiloid ship, now a mind flayer outpost.",
+        "details": {
+            "danger": "High",
+            "enemies": "Mind flayers, Thralls"
+        }
     },
     {
-      "id": "caves-of-hunger",
-      "x": 2600,
-      "y": 1300,
-      "type": "dungeon",
-      "name": "Caves of Hunger",
-      "description": "A network of caverns beneath Kelvin's Cairn.",
-      "notable": "Cave system, Monsters, Hidden treasures"
+        "id": "sunblight",
+        "x": 3800,
+        "y": 800,
+        "type": "dungeon",
+        "name": "Sunblight Fortress",
+        "description": "Duergar fortress hidden in the mountains.",
+        "details": {
+            "danger": "High",
+            "enemies": "Duergar, Chardalyn dragon"
+        }
     },
     {
-      "id": "tribe-of-elk",
-      "x": 3500,
-      "y": 2800,
-      "type": "camp",
-      "name": "Tribe of the Elk",
-      "description": "A nomadic Reghed tribe that follows elk herds.",
-      "notable": "Nomadic tribe, Elk herders, Seasonal migration"
+        "id": "elk-tribe",
+        "x": 3800,
+        "y": 1500,
+        "type": "camp",
+        "name": "Tribe of the Elk",
+        "description": "Nomadic Reghed tribe, friendly to outsiders.",
+        "details": {
+            "chief": "Jarund Elkhardt",
+            "attitude": "Friendly"
+        }
     },
     {
-      "id": "tribe-of-wolf",
-      "x": 3800,
-      "y": 2400,
-      "type": "camp",
-      "name": "Tribe of the Wolf",
-      "description": "A fierce Reghed tribe known for their wolf companions.",
-      "notable": "Wolf companions, Hunters, Fierce warriors"
+        "id": "wolf-tribe",
+        "x": 4500,
+        "y": 1800,
+        "type": "camp",
+        "name": "Tribe of the Wolf",
+        "description": "Aggressive Reghed tribe, hostile to outsiders.",
+        "details": {
+            "chief": "Isarr Kronenstrom",
+            "attitude": "Hostile"
+        }
     }
-  ]
-}
+]
