@@ -330,31 +330,49 @@
                 this.loadMarkers();
             }
             
-                        setupMap() {
+            setupMap() {
                 const containerWidth = this.container.clientWidth;
                 const containerHeight = this.container.clientHeight;
                 
+                // Calculate scale to ensure map always fills the screen
                 const scaleX = containerWidth / config.mapWidth;
                 const scaleY = containerHeight / config.mapHeight;
-                this.scale = Math.min(scaleX, scaleY); // Remove the 0.9 multiplier
+                this.scale = Math.max(scaleX, scaleY); // Changed from Math.min to Math.max
                 
                 // Center the map
                 this.x = (containerWidth - config.mapWidth * this.scale) / 2;
                 this.y = (containerHeight - config.mapHeight * this.scale) / 2;
                 
+                // Update config min zoom to ensure map always fills screen
+                config.minZoom = Math.max(scaleX, scaleY);
+                
+                this.constrainPosition();
                 this.updateTransform();
             }
-            
+
             constrainPosition() {
                 const containerWidth = this.container.clientWidth;
                 const containerHeight = this.container.clientHeight;
                 const scaledWidth = config.mapWidth * this.scale;
                 const scaledHeight = config.mapHeight * this.scale;
                 
-                // Set strict boundaries to prevent showing gray areas
-                this.x = Math.min(0, Math.max(containerWidth - scaledWidth, this.x));
-                this.y = Math.min(0, Math.max(containerHeight - scaledHeight, this.y));
-            }
+                // Ensure the map edges don't show gray areas
+                if (scaledWidth <= containerWidth) {
+                    // Center horizontally if map is smaller than container
+                    this.x = (containerWidth - scaledWidth) / 2;
+                } else {
+                    // Don't allow gray areas on sides
+                    this.x = Math.min(0, Math.max(containerWidth - scaledWidth, this.x));
+                }
+                
+                if (scaledHeight <= containerHeight) {
+                    // Center vertically if map is smaller than container
+                    this.y = (containerHeight - scaledHeight) / 2;
+                } else {
+                    // Don't allow gray areas on top/bottom
+                    this.y = Math.min(0, Math.max(containerHeight - scaledHeight, this.y));
+                }
+            }   
             
             setupEventListeners() {
                 // Mouse events
