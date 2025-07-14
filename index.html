@@ -280,29 +280,14 @@
             }
             
             setupMap() {
-<<<<<<< HEAD
-=======
                 // Calculate initial scale to fit map in viewport
->>>>>>> parent of c7f5392 (fixed drag, legenda, scale)
                 const containerWidth = this.container.clientWidth;
                 const containerHeight = this.container.clientHeight;
                 
                 // Calculate minimum scale needed to fill either width or height
                 const scaleX = containerWidth / config.mapWidth;
                 const scaleY = containerHeight / config.mapHeight;
-<<<<<<< HEAD
-                const minScale = Math.max(scaleX, scaleY);
-                
-                // Set initial scale to minScale if not yet set
-                if (!this.scale || this.scale < minScale) {
-                    this.scale = minScale;
-                }
-                
-                // Store minScale for zoom operations
-                this.minScale = minScale;
-=======
                 this.scale = Math.min(scaleX, scaleY) * 0.9; // 90% to add padding
->>>>>>> parent of c7f5392 (fixed drag, legenda, scale)
                 
                 // Center the map
                 this.x = (containerWidth - config.mapWidth * this.scale) / 2;
@@ -311,33 +296,6 @@
                 this.constrainPosition();
                 this.updateTransform();
             }
-<<<<<<< HEAD
-
-            constrainPosition() {
-                const containerWidth = this.container.clientWidth;
-                const containerHeight = this.container.clientHeight;
-                const scaledWidth = config.mapWidth * this.scale;
-                const scaledHeight = config.mapHeight * this.scale;
-                
-                // Ensure the map edges don't show gray areas
-                if (scaledWidth <= containerWidth) {
-                    // Center horizontally if map is smaller than container
-                    this.x = (containerWidth - scaledWidth) / 2;
-                } else {
-                    // Don't allow gray areas on sides
-                    this.x = Math.min(0, Math.max(containerWidth - scaledWidth, this.x));
-                }
-                
-                if (scaledHeight <= containerHeight) {
-                    // Center vertically if map is smaller than container
-                    this.y = (containerHeight - scaledHeight) / 2;
-                } else {
-                    // Don't allow gray areas on top/bottom
-                    this.y = Math.min(0, Math.max(containerHeight - scaledHeight, this.y));
-                }
-            }   
-=======
->>>>>>> parent of c7f5392 (fixed drag, legenda, scale)
             
             setupEventListeners() {
                 // Mouse events
