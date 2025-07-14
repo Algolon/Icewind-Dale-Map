@@ -280,14 +280,18 @@
             }
             
             setupMap() {
-                // Calculate initial scale to fit map in viewport
                 const containerWidth = this.container.clientWidth;
                 const containerHeight = this.container.clientHeight;
                 
-                // Calculate minimum scale needed to fill either width or height
+                // Calculate scale to ensure map always fills the screen
                 const scaleX = containerWidth / config.mapWidth;
                 const scaleY = containerHeight / config.mapHeight;
-                this.scale = Math.min(scaleX, scaleY) * 0.9; // 90% to add padding
+                this.minScale = Math.max(scaleX, scaleY); // Set minimum scale to always fill screen
+                
+                // Set initial scale if not set
+                if (!this.scale || this.scale < this.minScale) {
+                    this.scale = this.minScale;
+                }
                 
                 // Center the map
                 this.x = (containerWidth - config.mapWidth * this.scale) / 2;
@@ -296,7 +300,28 @@
                 this.constrainPosition();
                 this.updateTransform();
             }
-            
+
+            constrainPosition() {
+                const containerWidth = this.container.clientWidth;
+                const containerHeight = this.container.clientHeight;
+                const scaledWidth = config.mapWidth * this.scale;
+                const scaledHeight = config.mapHeight * this.scale;
+                
+                // If scaled size is smaller than container, center it
+                if (scaledWidth <= containerWidth) {
+                    this.x = (containerWidth - scaledWidth) / 2;
+                } else {
+                    // Don't allow gray areas on sides
+                    this.x = Math.min(0, Math.max(containerWidth - scaledWidth, this.x));
+                }
+                
+                if (scaledHeight <= containerHeight) {
+                    this.y = (containerHeight - scaledHeight) / 2;
+                } else {
+                    // Don't allow gray areas on top/bottom
+                    this.y = Math.min(0, Math.max(containerHeight - scaledHeight, this.y));
+                }
+            }
             setupEventListeners() {
                 // Mouse events
                 this.container.addEventListener('mousedown', (e) => this.startDrag(e));
@@ -305,47 +330,32 @@
                 this.container.addEventListener('mouseleave', () => this.endDrag());
                 
                 // Touch events
-                let touchStartTime = 0;
-                let lastTap = 0;
-                let touchDistance = 0;
-                let lastTouchTime = 0;
-                
-                this.container.addEventListener('touchstart', (e) => {
-                    if (e.touches.length === 2) {
-                        // Store initial distance for pinch zoom
-                        touchDistance = this.getTouchDistance(e.touches);
-                    } else if (e.touches.length === 1) {
-                        touchStartTime = Date.now();
-                        const timeSinceLastTap = touchStartTime - lastTap;
-                        if (timeSinceLastTap < 300) {
-                            // Double tap detected
-                            this.handleDoubleTap(e.touches[0]);
+                    let touchDistance = 0;
+                    
+                    this.container.addEventListener('touchstart', (e) => {
+                        if (e.touches.length === 2) {
                             e.preventDefault();
+                            touchDistance = this.getTouchDistance(e.touches);
+                        } else if (e.touches.length === 1) {
+                            this.startDrag(e.touches[0]);
                         }
-                        this.startDrag(e.touches[0]);
-                    }
-                });
+                    });
 
-                this.container.addEventListener('touchmove', (e) => {
-                    e.preventDefault();
-                    if (e.touches.length === 2) {
-                        // Handle pinch zoom
-                        const newDistance = this.getTouchDistance(e.touches);
-                        const delta = (newDistance - touchDistance) * 0.005; // Adjust sensitivity
-                        touchDistance = newDistance;
-                        
-                        this.handlePinchZoom(e, delta);
-                    } else if (e.touches.length === 1) {
-                        this.drag(e.touches[0]);
-                    }
-                });
+                    this.container.addEventListener('touchmove', (e) => {
+                        e.preventDefault();
+                        if (e.touches.length === 2) {
+                            const newDistance = this.getTouchDistance(e.touches);
+                            const delta = (newDistance - touchDistance) * 0.003;
+                            touchDistance = newDistance;
+                            this.handlePinchZoom(e, delta);
+                        } else if (e.touches.length === 1) {
+                            this.drag(e.touches[0]);
+                        }
+                    });
 
-                this.container.addEventListener('touchend', (e) => {
-                    if (e.touches.length === 0) {
-                        lastTap = Date.now();
-                    }
-                    this.endDrag();
-                });
+                    this.container.addEventListener('touchend', () => {
+                        this.endDrag();
+                    });
                 // Wheel zoom
                 this.container.addEventListener('wheel', (e) => {
                     e.preventDefault();
@@ -542,21 +552,39 @@
                     <p>${data.description}</p>
                 `;
                 
-                // Position popup near marker
+                // Position popup near marker but ensure it's visible
                 const rect = marker.getBoundingClientRect();
-                this.popup.style.left = `${rect.left + rect.width / 2}px`;
-                this.popup.style.top = `${rect.top - 10}px`;
-                this.popup.style.transform = 'translate(-50%, -100%)';
+                const popupHeight = this.popup.offsetHeight;
                 
+                // Check if popup would go off-screen at top
+                if (rect.top - popupHeight - 10 < 0) {
+                    // Show below marker instead
+                    this.popup.style.top = `${rect.bottom + 10}px`;
+                    this.popup.style.transform = 'translate(-50%, 0)';
+                } else {
+                    // Show above marker
+                    this.popup.style.top = `${rect.top - 10}px`;
+                    this.popup.style.transform = 'translate(-50%, -100%)';
+                }
+                
+                this.popup.style.left = `${rect.left + rect.width / 2}px`;
                 this.popup.classList.add('active');
                 
-                // Hide popup when clicking elsewhere
-                const hidePopup = () => {
-                    this.popup.classList.remove('active');
-                    document.removeEventListener('click', hidePopup);
+                // Hide popup when touching/clicking elsewhere
+                const hidePopup = (e) => {
+                    if (!this.popup.contains(e.target) && !marker.contains(e.target)) {
+                        this.popup.classList.remove('active');
+                        document.removeEventListener('click', hidePopup);
+                        document.removeEventListener('touchstart', hidePopup);
+                    }
                 };
-                setTimeout(() => document.addEventListener('click', hidePopup), 0);
+                
+                setTimeout(() => {
+                    document.addEventListener('click', hidePopup);
+                    document.addEventListener('touchstart', hidePopup);
+                }, 0);
             }
+
         }
         
         // Initialize map when DOM is ready
