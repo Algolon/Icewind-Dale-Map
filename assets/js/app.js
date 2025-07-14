@@ -1,121 +1,245 @@
-// Global map instance
-let mapInstance = null;
+// Main Application
+class MapApplication {
+    constructor() {
+        this.map = null;
+        this.isInitialized = false;
+        this.init();
+    }
 
-// Initialize application
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('Initializing D&D Interactive Map...');
-    
-    // Create map instance
-    mapInstance = new InteractiveMap();
-    
-    // Expose useful functions globally for console access
-    window.mapApp = {
-        map: mapInstance,
+    init() {
+        console.log('Starting MapApplication...');
         
-        // Utility functions
-        addMarker: (x, y, name, description, type = 'custom') => {
-            const id = `custom-${Date.now()}`;
-            const markerData = {
-                id,
-                x,
-                y,
-                type,
-                name,
-                description
-            };
-            mapInstance.markerManager.addMarker(markerData);
-            return id;
-        },
-        
-        removeMarker: (id) => {
-            mapInstance.markerManager.removeMarker(id);
-        },
-        
-        searchMarkers: (query) => {
-            const results = mapInstance.markerManager.searchMarkers(query);
-            console.table(results);
-            return results;
-        },
-        
-        panToMarker: (id) => {
-            const marker = mapInstance.markerManager.getMarker(id);
-            if (marker) {
-                mapInstance.panTo(marker.x, marker.y, 2);
-            } else {
-                console.error('Marker not found:', id);
-            }
-        },
-        
-        exportMarkers: () => {
-            const json = mapInstance.markerManager.exportMarkers();
-            console.log('Markers exported. Copy the following JSON:');
-            console.log(json);
-            return json;
-        },
-        
-        importMarkers: (json) => {
-            const success = mapInstance.markerManager.importMarkers(json);
-            if (success) {
-                console.log('Markers imported successfully');
-            } else {
-                console.error('Failed to import markers');
-            }
-            return success;
-        },
-        
-        getStats: () => {
-            const stats = mapInstance.markerManager.getStats();
-            console.log('Map Statistics:');
-            console.log(`Total markers: ${stats.total}`);
-            console.log('By type:');
-            Object.entries(stats.byType).forEach(([type, count]) => {
-                console.log(`  ${type}: ${count}`);
-            });
-            return stats;
-        },
-        
-        resetView: () => {
-            mapInstance.resetView();
-            console.log('View reset to initial state');
-        },
-        
-        toggleMarkerType: (type, visible = null) => {
-            if (visible === null) {
-                // Toggle current state
-                const marker = mapInstance.markerManager.markerElements.values().next().value;
-                visible = marker && marker.style.display === 'none';
-            }
-            mapInstance.markerManager.toggleMarkerType(type, visible);
-            console.log(`${type} markers ${visible ? 'shown' : 'hidden'}`);
-        },
-        
-        debugInfo: () => {
-            const state = mapInstance.getMapState();
-            console.log('Map Debug Information:');
-            console.log(`Scale: ${state.scale.toFixed(2)}`);
-            console.log(`Position: (${state.x.toFixed(0)}, ${state.y.toFixed(0)})`);
-            console.log(`Map size: ${state.width} x ${state.height}`);
-            console.log(`Viewport: ${window.innerWidth} x ${window.innerHeight}`);
-            return state;
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.initializeApp());
+        } else {
+            this.initializeApp();
         }
-    };
+    }
+
+    initializeApp() {
+        console.log('Initializing application...');
+        
+        // Validate DOM elements
+        if (!this.validateDOM()) {
+            console.error('Required DOM elements missing!');
+            return;
+        }
+        
+        // Initialize map
+        this.map = new InteractiveMap();
+        
+        // Setup additional features
+        this.setupKeyboardShortcuts();
+        this.setupLegendInteractions();
+        
+        this.isInitialized = true;
+        console.log('Application initialized successfully!');
+        
+        // Debug info after initialization
+        setTimeout(() => {
+            if (this.map && this.map.markerManager) {
+                console.log(`Map ready with ${this.map.markerManager.markers.length} markers`);
+            }
+        }, 500);
+    }
+
+    validateDOM() {
+        const required = [
+            'mapContainer',
+            'mapImage', 
+            'zoomIn',
+            'zoomOut',
+            'coordinates'
+        ];
+        
+        const missing = required.filter(id => !document.getElementById(id));
+        
+        if (missing.length > 0) {
+            console.error('Missing required elements:', missing);
+            return false;
+        }
+        
+        return true;
+    }
+
+    setupKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            // Don't handle if user is typing
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                return;
+            }
+
+            // Don't interfere with map's built-in shortcuts
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', '+', '-', '=', '0'].includes(e.key)) {
+                return;
+            }
+
+            switch(e.key.toLowerCase()) {
+                case 'h':
+                    e.preventDefault();
+                    this.showHelp();
+                    break;
+                case 'r':
+                    e.preventDefault();
+                    if (this.map) this.map.resetView();
+                    break;
+                case 'd':
+                    e.preventDefault();
+                    if (this.map) this.map.debugInfo();
+                    break;
+                case 'escape':
+                    if (this.map && this.map.markerManager) {
+                        this.map.markerManager.closePopup();
+                    }
+                    break;
+            }
+        });
+    }
+
+    setupLegendInteractions() {
+        // This can be enhanced later
+        console.log('Legend interactions ready');
+    }
+
+    showHelp() {
+        const helpText = `
+ICEWIND DALE MAP CONTROLS:
+
+MOUSE/TOUCH:
+• Drag: Pan the map
+• Scroll wheel: Zoom in/out
+• Double-click: Smart zoom
+• Click markers: Show details
+
+KEYBOARD:
+• Arrow keys: Pan map
+• + / - : Zoom in/out
+• 0: Reset to initial view
+• H: Show this help
+• R: Reset view
+• D: Debug info
+• Escape: Close popups
+
+BUTTONS:
+• + button: Zoom in
+• - button: Zoom out
+
+MAP FEATURES:
+• Green markers: Towns
+• Blue markers: Points of interest
+• Purple markers: Dungeons
+• Orange markers: Camps
+• Red markers: Custom locations
+        `;
+        
+        alert(helpText.trim());
+    }
+
+    // Public API
+    getMap() {
+        return this.map;
+    }
+
+    addCustomMarker(x, y, name, description, type = 'custom') {
+        if (!this.map || !this.map.markerManager) {
+            console.error('Map not ready yet');
+            return null;
+        }
+
+        const marker = {
+            id: `custom-${Date.now()}`,
+            x: x,
+            y: y,
+            type: type,
+            name: name,
+            description: description,
+            notable: 'User added marker'
+        };
+
+        return this.map.markerManager.addMarker(marker);
+    }
+
+    searchLocations(query) {
+        if (!this.map || !this.map.markerManager) return [];
+        return this.map.markerManager.searchMarkers(query);
+    }
+
+    goToLocation(locationId) {
+        if (!this.map) return false;
+        this.map.zoomToMarker(locationId);
+        return true;
+    }
+
+    debugInfo() {
+        if (!this.isInitialized) {
+            console.log('Application not yet initialized');
+            return;
+        }
+        
+        console.log('=== APPLICATION DEBUG ===');
+        console.log('App initialized:', this.isInitialized);
+        console.log('Map available:', !!this.map);
+        
+        if (this.map) {
+            this.map.debugInfo();
+        }
+    }
+}
+
+// Global variables
+let mapApp;
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM ready, starting application...');
+    mapApp = new MapApplication();
     
-    // Add console helpers
-    window.addMarker = window.mapApp.addMarker;
-    window.searchMap = window.mapApp.searchMarkers;
-    window.exportMap = window.mapApp.exportMarkers;
-    window.debugMap = window.mapApp.debugInfo;
-    
-    console.log('Map initialized! Available commands:');
-    console.log('- addMarker(x, y, name, description)');
-    console.log('- searchMap(query)');
-    console.log('- exportMap()');
-    console.log('- debugMap()');
-    console.log('- mapApp.[various methods]');
-    
-    // Show initial stats
-    setTimeout(() => {
-        const stats = window.mapApp.getStats();
-        console.log(`Loaded ${stats.total} markers`);
-    }, 1000);
+    // Make globally accessible
+    window.mapApp = mapApp;
 });
+
+// Global utility functions
+window.addMarker = function(x, y, name, description, type = 'custom') {
+    if (!mapApp || !mapApp.isInitialized) {
+        console.error('Map not ready. Please wait for initialization.');
+        return null;
+    }
+    return mapApp.addCustomMarker(x, y, name, description, type);
+};
+
+window.searchMap = function(query) {
+    return mapApp ? mapApp.searchLocations(query) : [];
+};
+
+window.goTo = function(locationId) {
+    return mapApp ? mapApp.goToLocation(locationId) : false;
+};
+
+window.debugMap = function() {
+    if (mapApp) {
+        mapApp.debugInfo();
+    } else {
+        console.log('Map application not available');
+    }
+};
+
+window.resetMap = function() {
+    if (mapApp && mapApp.map) {
+        mapApp.map.resetView();
+    }
+};
+
+// Error handling
+window.addEventListener('error', (e) => {
+    console.error('Application error:', e.error);
+});
+
+// Console welcome message
+console.log('Icewind Dale Interactive Map');
+console.log('Available functions: addMarker(), searchMap(), goTo(), debugMap(), resetMap()');
+console.log('Press H for help once loaded');
+
+// Export for modules if needed
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = MapApplication;
+}

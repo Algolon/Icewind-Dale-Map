@@ -1,343 +1,406 @@
 class InteractiveMap {
     constructor() {
-        this.container = document.getElementById('map-container');
-        this.viewport = document.getElementById('map-viewport');
-        this.image = document.getElementById('map-image');
-        this.markerLayer = document.getElementById('marker-layer');
-        this.coordDisplay = document.getElementById('coordinates');
-        this.popup = document.getElementById('popup');
+        console.log('Initializing InteractiveMap...');
+        
+        // Get DOM elements
+        this.mapContainer = document.getElementById('mapContainer');
+        this.mapImage = document.getElementById('mapImage');
+        this.coordinates = document.getElementById('coordinates');
+        this.zoomInBtn = document.getElementById('zoomIn');
+        this.zoomOutBtn = document.getElementById('zoomOut');
+        
+        // Validate required elements
+        if (!this.mapContainer || !this.mapImage) {
+            console.error('Required DOM elements not found!');
+            return;
+        }
         
         // Map state
         this.scale = 1;
-        this.x = 0;
-        this.y = 0;
+        this.translateX = 0;
+        this.translateY = 0;
         this.isDragging = false;
-        this.startX = 0;
-        this.startY = 0;
+        this.lastMouseX = 0;
+        this.lastMouseY = 0;
         
-        // Markers
-        this.markers = [];
-        this.markerManager = null;
+        // Map dimensions
+        this.mapWidth = MAP_CONFIG.width;
+        this.mapHeight = MAP_CONFIG.height;
         
-        // Initialize
-        this.init();
+        // Zoom settings
+        this.minZoom = MAP_CONFIG.minZoom;
+        this.maxZoom = MAP_CONFIG.maxZoom;
+        this.zoomStep = MAP_CONFIG.zoomStep;
+        this.wheelSensitivity = MAP_CONFIG.wheelZoomSensitivity;
+        
+        // Wait for image to load, then initialize
+        if (this.mapImage.complete) {
+            this.init();
+        } else {
+            this.mapImage.addEventListener('load', () => this.init());
+            this.mapImage.addEventListener('error', () => {
+                console.warn('Map image failed to load, using placeholder');
+                this.init();
+            });
+        }
     }
     
     init() {
-        // Show loading state
-        this.showLoading();
+        console.log('Map image loaded, setting up...');
         
-        // Wait for image to load
-        if (this.image.complete) {
-            this.onImageLoad();
-        } else {
-            this.image.addEventListener('load', () => this.onImageLoad());
-            this.image.addEventListener('error', () => this.onImageError());
-        }
+        // Calculate initial zoom to fit screen
+        this.calculateInitialZoom();
         
+        // Setup event listeners
         this.setupEventListeners();
-    }
-    
-    showLoading() {
-        const loading = document.createElement('div');
-        loading.className = 'loading';
-        loading.textContent = 'Loading map...';
-        loading.id = 'loading-indicator';
-        document.body.appendChild(loading);
-    }
-    
-    hideLoading() {
-        const loading = document.getElementById('loading-indicator');
-        if (loading) loading.remove();
-    }
-    
-    onImageLoad() {
-        this.hideLoading();
-        this.setupMap();
         
-        // Initialize marker manager
-        this.markerManager = new MarkerManager(this);
-        this.markerManager.loadMarkers();
-        
-        if (DEBUG) console.log('Map loaded successfully');
-    }
-    
-    onImageError() {
-        this.hideLoading();
-        console.error('Failed to load map image. Please check the map.jpg file exists.');
-        alert('Failed to load map image. Please ensure map.jpg is in the root directory.');
-    }
-    
-    setupMap() {
-        // Calculate initial scale to fit map in viewport
-        const containerWidth = this.container.clientWidth;
-        const containerHeight = this.container.clientHeight;
-        
-        const scaleX = containerWidth / MAP_CONFIG.mapWidth;
-        const scaleY = containerHeight / MAP_CONFIG.mapHeight;
-        this.scale = Math.min(scaleX, scaleY) * MAP_CONFIG.initialPadding;
-        
-        // Ensure we don't zoom out too far
-        this.scale = Math.max(this.scale, MAP_CONFIG.minZoom);
-        
-        // Center the map
-        this.x = (containerWidth - MAP_CONFIG.mapWidth * this.scale) / 2;
-        this.y = (containerHeight - MAP_CONFIG.mapHeight * this.scale) / 2;
-        
+        // Position map
+        this.centerMap();
         this.updateTransform();
+        
+        // Initialize markers after a short delay
+        setTimeout(() => {
+            this.markerManager = new MarkerManager(this);
+        }, 200);
+        
+        console.log(`Map initialized: ${Math.round(this.scale * 100)}% zoom`);
+    }
+    
+    calculateInitialZoom() {
+        const containerRect = this.mapContainer.getBoundingClientRect();
+        
+        // Calculate scale to fit entire map with padding
+        const scaleX = (containerRect.width * 0.9) / this.mapWidth;
+        const scaleY = (containerRect.height * 0.9) / this.mapHeight;
+        
+        // Use smaller scale to ensure map fits entirely
+        this.scale = Math.max(this.minZoom, Math.min(scaleX, scaleY));
+        
+        console.log(`Container: ${Math.round(containerRect.width)}x${Math.round(containerRect.height)}`);
+        console.log(`Map: ${this.mapWidth}x${this.mapHeight}`);
+        console.log(`Initial zoom: ${Math.round(this.scale * 100)}%`);
     }
     
     setupEventListeners() {
+        console.log('Setting up event listeners...');
+        
+        // Zoom buttons
+        if (this.zoomInBtn) {
+            this.zoomInBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.zoomIn();
+            });
+        }
+        
+        if (this.zoomOutBtn) {
+            this.zoomOutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.zoomOut();
+            });
+        }
+        
         // Mouse events
-        this.container.addEventListener('mousedown', (e) => this.startDrag(e));
-        document.addEventListener('mousemove', (e) => this.drag(e));
-        document.addEventListener('mouseup', () => this.endDrag());
-        
-        // Touch events
-        let touchStartDistance = 0;
-        let touchStartScale = 1;
-        
-        this.container.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 1) {
-                this.startDrag(e.touches[0]);
-            } else if (e.touches.length === 2) {
-                // Pinch zoom start
-                touchStartDistance = this.getTouchDistance(e.touches);
-                touchStartScale = this.scale;
+        this.mapContainer.addEventListener('mousedown', (e) => {
+            if (!e.target.classList.contains('marker')) {
+                this.startDrag(e.clientX, e.clientY);
             }
         });
         
-        this.container.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            if (e.touches.length === 1 && this.isDragging) {
-                this.drag(e.touches[0]);
-            } else if (e.touches.length === 2) {
-                // Pinch zoom
-                const currentDistance = this.getTouchDistance(e.touches);
-                const scale = (currentDistance / touchStartDistance) * touchStartScale;
-                this.setScale(scale);
-            }
+        document.addEventListener('mousemove', (e) => {
+            this.handleDrag(e.clientX, e.clientY);
+            this.updateCoordinates(e);
         });
         
-        this.container.addEventListener('touchend', () => this.endDrag());
+        document.addEventListener('mouseup', () => {
+            this.stopDrag();
+        });
         
         // Wheel zoom
-        this.container.addEventListener('wheel', (e) => {
+        this.mapContainer.addEventListener('wheel', (e) => {
             e.preventDefault();
-            this.wheelZoom(e);
+            this.handleWheel(e);
+        }, { passive: false });
+        
+        // Touch events
+        this.mapContainer.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                this.startDrag(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }, { passive: false });
+        
+        this.mapContainer.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (e.touches.length === 1) {
+                this.handleDrag(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }, { passive: false });
+        
+        this.mapContainer.addEventListener('touchend', () => {
+            this.stopDrag();
         });
         
-        // Button controls
-        document.getElementById('zoom-in').addEventListener('click', () => this.zoomIn());
-        document.getElementById('zoom-out').addEventListener('click', () => this.zoomOut());
+        // Double click zoom
+        this.mapContainer.addEventListener('dblclick', (e) => {
+            if (!e.target.classList.contains('marker')) {
+                this.handleDoubleClick(e);
+            }
+        });
         
-        // Coordinate tracking
-        this.container.addEventListener('mousemove', (e) => this.updateCoordinates(e));
+        // Keyboard events
+        document.addEventListener('keydown', (e) => {
+            this.handleKeyboard(e);
+        });
         
         // Window resize
-        window.addEventListener('resize', () => this.handleResize());
+        window.addEventListener('resize', () => {
+            this.handleResize();
+        });
         
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => this.handleKeyboard(e));
+        // Prevent context menu
+        this.mapContainer.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
     }
     
-    getTouchDistance(touches) {
-        const dx = touches[0].clientX - touches[1].clientX;
-        const dy = touches[0].clientY - touches[1].clientY;
-        return Math.sqrt(dx * dx + dy * dy);
-    }
-    
-    startDrag(e) {
+    startDrag(clientX, clientY) {
         this.isDragging = true;
-        this.container.classList.add('grabbing');
-        this.startX = e.clientX - this.x;
-        this.startY = e.clientY - this.y;
+        this.lastMouseX = clientX;
+        this.lastMouseY = clientY;
+        this.mapContainer.style.cursor = 'grabbing';
     }
     
-    drag(e) {
-        if (!this.isDragging) return;
+    handleDrag(clientX, clientY) {
+        if (this.isDragging) {
+            const deltaX = clientX - this.lastMouseX;
+            const deltaY = clientY - this.lastMouseY;
+            
+            this.translateX += deltaX;
+            this.translateY += deltaY;
+            
+            this.constrainPosition();
+            this.updateTransform();
+            
+            this.lastMouseX = clientX;
+            this.lastMouseY = clientY;
+        }
+    }
+    
+    stopDrag() {
+        this.isDragging = false;
+        this.mapContainer.style.cursor = 'grab';
+    }
+    
+    handleWheel(e) {
+        const rect = this.mapContainer.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
         
-        this.x = e.clientX - this.startX;
-        this.y = e.clientY - this.startY;
+        // Determine zoom direction
+        const zoomIn = e.deltaY < 0;
+        const zoomAmount = this.wheelSensitivity * (zoomIn ? 1 : -1);
+        
+        this.zoomToPoint(mouseX, mouseY, zoomAmount);
+    }
+    
+    handleDoubleClick(e) {
+        const rect = this.mapContainer.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        // Smart zoom: zoom in if zoomed out, zoom out if zoomed in
+        const targetZoom = this.scale < 1.5 ? 2 : this.calculateInitialZoom();
+        this.zoomToPointAbsolute(mouseX, mouseY, targetZoom);
+    }
+    
+    handleKeyboard(e) {
+        const panAmount = 50;
+        
+        switch(e.key) {
+            case 'ArrowUp':
+                e.preventDefault();
+                this.pan(0, panAmount);
+                break;
+            case 'ArrowDown':
+                e.preventDefault();
+                this.pan(0, -panAmount);
+                break;
+            case 'ArrowLeft':
+                e.preventDefault();
+                this.pan(panAmount, 0);
+                break;
+            case 'ArrowRight':
+                e.preventDefault();
+                this.pan(-panAmount, 0);
+                break;
+            case '+':
+            case '=':
+                e.preventDefault();
+                this.zoomIn();
+                break;
+            case '-':
+                e.preventDefault();
+                this.zoomOut();
+                break;
+            case '0':
+                e.preventDefault();
+                this.resetView();
+                break;
+        }
+    }
+    
+    handleResize() {
+        this.calculateInitialZoom();
+        this.centerMap();
+        this.updateTransform();
+    }
+    
+    // Zoom methods
+    zoomIn() {
+        const newScale = Math.min(this.maxZoom, this.scale + this.zoomStep);
+        this.zoomToCenter(newScale);
+        console.log(`Zoomed in to ${Math.round(newScale * 100)}%`);
+    }
+    
+    zoomOut() {
+        const newScale = Math.max(this.minZoom, this.scale - this.zoomStep);
+        this.zoomToCenter(newScale);
+        console.log(`Zoomed out to ${Math.round(newScale * 100)}%`);
+    }
+    
+    zoomToCenter(newScale) {
+        const rect = this.mapContainer.getBoundingClientRect();
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        this.zoomToPointAbsolute(centerX, centerY, newScale);
+    }
+    
+    zoomToPoint(clientX, clientY, zoomAmount) {
+        const newScale = Math.max(this.minZoom, Math.min(this.maxZoom, this.scale + zoomAmount));
+        this.zoomToPointAbsolute(clientX, clientY, newScale);
+    }
+    
+    zoomToPointAbsolute(clientX, clientY, newScale) {
+        if (newScale === this.scale) return;
+        
+        // Calculate point in map coordinates before zoom
+        const mapX = (clientX - this.translateX) / this.scale;
+        const mapY = (clientY - this.translateY) / this.scale;
+        
+        // Update scale
+        this.scale = newScale;
+        
+        // Recalculate position to keep point under cursor
+        this.translateX = clientX - mapX * this.scale;
+        this.translateY = clientY - mapY * this.scale;
         
         this.constrainPosition();
         this.updateTransform();
     }
     
-    endDrag() {
-        this.isDragging = false;
-        this.container.classList.remove('grabbing');
-    }
-    
-    wheelZoom(e) {
-        const rect = this.container.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-        
-        // Calculate zoom
-        const delta = e.deltaY > 0 ? -MAP_CONFIG.wheelZoomStep : MAP_CONFIG.wheelZoomStep;
-        const newScale = this.scale * (1 + delta);
-        
-        // Apply zoom centered on mouse position
-        this.zoomToPoint(newScale, mouseX, mouseY);
-    }
-    
-    zoomIn() {
-        const newScale = this.scale * (1 + MAP_CONFIG.zoomStep);
-        this.zoomToCenter(newScale);
-    }
-    
-    zoomOut() {
-        const newScale = this.scale * (1 - MAP_CONFIG.zoomStep);
-        this.zoomToCenter(newScale);
-    }
-    
-    zoomToCenter(newScale) {
-        const centerX = this.container.clientWidth / 2;
-        const centerY = this.container.clientHeight / 2;
-        this.zoomToPoint(newScale, centerX, centerY);
-    }
-    
-    zoomToPoint(newScale, pointX, pointY) {
-        // Clamp scale
-        newScale = Math.max(MAP_CONFIG.minZoom, Math.min(MAP_CONFIG.maxZoom, newScale));
-        
-        if (newScale !== this.scale) {
-            // Calculate new position to keep point stationary
-            const scaleRatio = newScale / this.scale;
-            this.x = pointX - (pointX - this.x) * scaleRatio;
-            this.y = pointY - (pointY - this.y) * scaleRatio;
-            this.scale = newScale;
-            
-            this.constrainPosition();
-            this.updateTransform();
-        }
-    }
-    
-    setScale(scale) {
-        this.scale = Math.max(MAP_CONFIG.minZoom, Math.min(MAP_CONFIG.maxZoom, scale));
+    pan(deltaX, deltaY) {
+        this.translateX += deltaX;
+        this.translateY += deltaY;
         this.constrainPosition();
         this.updateTransform();
     }
     
     constrainPosition() {
-        const containerWidth = this.container.clientWidth;
-        const containerHeight = this.container.clientHeight;
-        const scaledWidth = MAP_CONFIG.mapWidth * this.scale;
-        const scaledHeight = MAP_CONFIG.mapHeight * this.scale;
+        const containerRect = this.mapContainer.getBoundingClientRect();
+        const scaledWidth = this.mapWidth * this.scale;
+        const scaledHeight = this.mapHeight * this.scale;
         
-        if (scaledWidth <= containerWidth) {
-            // Center horizontally if map is smaller than container
-            this.x = (containerWidth - scaledWidth) / 2;
-        } else {
-            // Don't allow map to go too far outside viewport
-            const maxX = containerWidth * MAP_CONFIG.boundaryPadding;
-            const minX = containerWidth * (1 - MAP_CONFIG.boundaryPadding) - scaledWidth;
-            this.x = Math.max(minX, Math.min(maxX, this.x));
+        // Calculate bounds
+        let minX = containerRect.width - scaledWidth;
+        let maxX = 0;
+        let minY = containerRect.height - scaledHeight;
+        let maxY = 0;
+        
+        // If map is smaller than container, center it
+        if (scaledWidth <= containerRect.width) {
+            minX = maxX = (containerRect.width - scaledWidth) / 2;
+        }
+        if (scaledHeight <= containerRect.height) {
+            minY = maxY = (containerRect.height - scaledHeight) / 2;
         }
         
-        if (scaledHeight <= containerHeight) {
-            // Center vertically if map is smaller than container
-            this.y = (containerHeight - scaledHeight) / 2;
-        } else {
-            // Don't allow map to go too far outside viewport
-            const maxY = containerHeight * MAP_CONFIG.boundaryPadding;
-            const minY = containerHeight * (1 - MAP_CONFIG.boundaryPadding) - scaledHeight;
-            this.y = Math.max(minY, Math.min(maxY, this.y));
-        }
+        // Apply constraints
+        this.translateX = Math.max(minX, Math.min(maxX, this.translateX));
+        this.translateY = Math.max(minY, Math.min(maxY, this.translateY));
+    }
+    
+    centerMap() {
+        const containerRect = this.mapContainer.getBoundingClientRect();
+        const scaledWidth = this.mapWidth * this.scale;
+        const scaledHeight = this.mapHeight * this.scale;
+        
+        this.translateX = (containerRect.width - scaledWidth) / 2;
+        this.translateY = (containerRect.height - scaledHeight) / 2;
+        
+        console.log(`Centered: translate(${Math.round(this.translateX)}, ${Math.round(this.translateY)})`);
     }
     
     updateTransform() {
-        this.viewport.style.transform = `translate(${this.x}px, ${this.y}px) scale(${this.scale})`;
-        
-        // Update marker scale
-        if (this.markerManager) {
-            this.markerManager.updateMarkerScale(this.scale);
-        }
-        
-        if (DEBUG) {
-            console.log(`Transform: x=${this.x.toFixed(1)}, y=${this.y.toFixed(1)}, scale=${this.scale.toFixed(2)}`);
+        if (this.mapImage) {
+            this.mapImage.style.transform = `translate(${this.translateX}px, ${this.translateY}px) scale(${this.scale})`;
         }
     }
     
     updateCoordinates(e) {
-        const rect = this.container.getBoundingClientRect();
-        const x = (e.clientX - rect.left - this.x) / this.scale;
-        const y = (e.clientY - rect.top - this.y) / this.scale;
+        if (!this.coordinates || !this.mapContainer.contains(e.target)) return;
         
-        if (x >= 0 && x <= MAP_CONFIG.mapWidth && y >= 0 && y <= MAP_CONFIG.mapHeight) {
-            this.coordDisplay.textContent = `X: ${Math.round(x)}, Y: ${Math.round(y)}`;
+        const rect = this.mapContainer.getBoundingClientRect();
+        const x = Math.round((e.clientX - rect.left - this.translateX) / this.scale);
+        const y = Math.round((e.clientY - rect.top - this.translateY) / this.scale);
+        
+        if (x >= 0 && x <= this.mapWidth && y >= 0 && y <= this.mapHeight) {
+            this.coordinates.textContent = `X: ${x}, Y: ${y}`;
         } else {
-            this.coordDisplay.textContent = 'Outside map';
-        }
-    }
-    
-    handleResize() {
-        // Recalculate constraints
-        this.constrainPosition();
-        this.updateTransform();
-    }
-    
-    handleKeyboard(e) {
-        switch(e.key) {
-            case '+':
-            case '=':
-                this.zoomIn();
-                break;
-            case '-':
-            case '_':
-                this.zoomOut();
-                break;
-            case '0':
-                this.resetView();
-                break;
-            case 'h':
-            case 'H':
-                this.showHelp();
-                break;
+            this.coordinates.textContent = 'Outside map';
         }
     }
     
     resetView() {
-        this.setupMap();
+        this.calculateInitialZoom();
+        this.centerMap();
+        this.updateTransform();
+        console.log('Reset to initial view');
     }
     
-    showHelp() {
-        alert(`Keyboard Shortcuts:
-        + / - : Zoom in/out
-        0 : Reset view
-        H : Show this help
+    // Public API methods
+    panTo(x, y) {
+        const containerRect = this.mapContainer.getBoundingClientRect();
+        this.translateX = containerRect.width / 2 - x * this.scale;
+        this.translateY = containerRect.height / 2 - y * this.scale;
+        this.constrainPosition();
+        this.updateTransform();
+    }
+    
+    zoomToMarker(markerId) {
+        if (!this.markerManager) return;
         
-Mouse Controls:
-        Scroll : Zoom
-        Drag : Pan
-        Click marker : Show details`);
+        const marker = this.markerManager.getMarkerById(markerId);
+        if (marker) {
+            this.scale = 2;
+            this.panTo(marker.x, marker.y);
+        }
     }
     
-    // Public API
-    getMapState() {
+    getCurrentBounds() {
+        const containerRect = this.mapContainer.getBoundingClientRect();
         return {
-            scale: this.scale,
-            x: this.x,
-            y: this.y,
-            width: MAP_CONFIG.mapWidth,
-            height: MAP_CONFIG.mapHeight
+            left: -this.translateX / this.scale,
+            top: -this.translateY / this.scale,
+            right: (-this.translateX + containerRect.width) / this.scale,
+            bottom: (-this.translateY + containerRect.height) / this.scale
         };
     }
     
-    panTo(x, y, scale = null) {
-        if (scale !== null) {
-            this.scale = Math.max(MAP_CONFIG.minZoom, Math.min(MAP_CONFIG.maxZoom, scale));
-        }
-        
-        // Convert map coordinates to viewport coordinates
-        const centerX = this.container.clientWidth / 2;
-        const centerY = this.container.clientHeight / 2;
-        
-        this.x = centerX - x * this.scale;
-        this.y = centerY - y * this.scale;
-        
-        this.constrainPosition();
-        this.updateTransform();
+    debugInfo() {
+        console.log('=== MAP DEBUG ===');
+        console.log('Scale:', this.scale);
+        console.log('Translation:', { x: this.translateX, y: this.translateY });
+        console.log('Map size:', { width: this.mapWidth, height: this.mapHeight });
+        console.log('Container size:', this.mapContainer.getBoundingClientRect());
+        console.log('Markers:', this.markerManager?.markers?.length || 0);
     }
 }

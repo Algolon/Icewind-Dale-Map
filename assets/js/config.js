@@ -1,50 +1,59 @@
 // Map Configuration
 const MAP_CONFIG = {
-    // Map dimensions (your actual map size)
-    mapWidth: 6000,
-    mapHeight: 4215,
+    // Map dimensions (should match your actual image dimensions)
+    width: 6000,
+    height: 4215,
     
     // Zoom settings
     minZoom: 0.1,
-    maxZoom: 4,
+    maxZoom: 3,
+    initialZoom: 'auto', // Will be calculated to fit screen
     zoomStep: 0.25,
-    wheelZoomStep: 0.1,
+    wheelZoomSensitivity: 0.1,
     
-    // Initial view padding
-    initialPadding: 0.9,
+    // UI settings
+    showCoordinates: true,
+    showLegend: true,
+    showZoomControls: true,
     
-    // Boundary constraints
-    boundaryPadding: 0.1
+    // File paths
+    paths: {
+        markerData: 'assets/data/markers.json',
+        images: 'assets/images/',
+        icons: 'assets/images/icons/'
+    },
+    
+    // Popup settings
+    popupOffset: 10
 };
 
-// Marker Types Configuration
+// Marker Type Configuration
 const MARKER_TYPES = {
     town: {
-        name: 'Town',
-        color: '#4ade80',
-        icon: '🏘️'
+        color: '#4CAF50',
+        hoverColor: '#66bb6a',
+        label: 'Towns'
     },
     poi: {
-        name: 'Point of Interest',
-        color: '#60a5fa',
-        icon: '📍'
+        color: '#2196F3',
+        hoverColor: '#42a5f5',
+        label: 'Points of Interest'
     },
     dungeon: {
-        name: 'Dungeon',
-        color: '#c084fc',
-        icon: '⚔️'
+        color: '#9C27B0',
+        hoverColor: '#BA68C8',
+        label: 'Dungeons'
     },
     camp: {
-        name: 'Camp',
-        color: '#fb923c',
-        icon: '🏕️'
+        color: '#FF9800',
+        hoverColor: '#FFB74D',
+        label: 'Camps'
     },
     custom: {
-        name: 'Custom',
-        color: '#ef4444',
-        icon: '⭐'
+        color: '#ff4444',
+        hoverColor: '#ff6666',
+        label: 'Custom Markers'
     }
 };
 
-// Debug mode
-const DEBUG = false;
+console.log('Config loaded successfully');
