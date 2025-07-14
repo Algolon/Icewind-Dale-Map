@@ -27,87 +27,18 @@ body {
     cursor: grabbing;
 }
 
+/* FIXED: Map image should be in background */
 .map-image {
     position: absolute;
     user-select: none;
     -webkit-user-select: none;
     -moz-user-select: none;
     transition: transform 0.1s ease-out;
+    z-index: 1; /* Background layer */
+    transform-origin: 0 0; /* Important for proper scaling */
 }
 
-/* Controls */
-.controls {
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    z-index: 1000;
-    background: rgba(0, 0, 0, 0.8);
-    padding: 15px;
-    border-radius: 10px;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.zoom-control {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-}
-
-.zoom-slider {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 150px;
-    height: 4px;
-    border-radius: 2px;
-    background: #555;
-    outline: none;
-}
-
-.zoom-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: #4CAF50;
-    cursor: pointer;
-}
-
-.zoom-slider::-moz-range-thumb {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: #4CAF50;
-    cursor: pointer;
-    border: none;
-}
-
-.zoom-buttons {
-    display: flex;
-    gap: 5px;
-}
-
-.zoom-btn {
-    background: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    width: 30px;
-    height: 30px;
-    cursor: pointer;
-    font-size: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.zoom-btn:hover {
-    background: #45a049;
-}
-
-/* Markers */
+/* FIXED: Markers should be above map image */
 .marker {
     position: absolute;
     width: 20px;
@@ -119,12 +50,14 @@ body {
     transform: translate(-50%, -50%);
     transition: all 0.2s ease;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-    z-index: 100;
+    z-index: 100; /* Above map image */
+    pointer-events: auto; /* Ensure clickable */
 }
 
 .marker:hover {
     transform: translate(-50%, -50%) scale(1.2);
     background: #ff6666;
+    z-index: 101; /* Above other markers when hovered */
 }
 
 .marker.town {
@@ -159,6 +92,54 @@ body {
     background: #FFB74D;
 }
 
+/* Controls - SIMPLIFIED */
+.controls {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 15px;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.zoom-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* REMOVED: Zoom slider - only buttons now */
+.zoom-buttons {
+    display: flex;
+    gap: 5px;
+}
+
+.zoom-btn {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    font-size: 20px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.zoom-btn:hover {
+    background: #45a049;
+}
+
+.zoom-btn:active {
+    transform: scale(0.95);
+}
+
 /* Popup */
 .popup {
     position: fixed;
@@ -168,7 +149,7 @@ body {
     padding: 20px;
     max-width: 300px;
     min-width: 250px;
-    z-index: 2000;
+    z-index: 2000; /* Above everything */
     backdrop-filter: blur(15px);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
     transform: scale(0);
@@ -199,6 +180,7 @@ body {
     color: #aaa;
     font-size: 20px;
     cursor: pointer;
+    z-index: 2001;
 }
 
 .popup .close-btn:hover {
@@ -265,8 +247,10 @@ body {
         padding: 10px;
     }
 
-    .zoom-slider {
-        width: 100px;
+    .zoom-btn {
+        width: 35px;
+        height: 35px;
+        font-size: 18px;
     }
 
     .legend {
@@ -294,8 +278,10 @@ body {
         padding: 8px;
     }
 
-    .zoom-slider {
-        width: 80px;
+    .zoom-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 16px;
     }
 
     .legend {
@@ -311,4 +297,10 @@ body {
         min-width: 180px;
         padding: 12px;
     }
+}
+
+/* Debug styles (remove in production) */
+.marker.debug {
+    background: yellow !important;
+    border: 2px solid red !important;
 }

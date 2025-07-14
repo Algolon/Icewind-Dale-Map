@@ -1,4 +1,4 @@
-// Main application initialization
+// Main Application
 class MapApplication {
     constructor() {
         this.map = null;
@@ -7,7 +7,8 @@ class MapApplication {
     }
 
     init() {
-        // Wait for DOM to be ready
+        console.log('Starting MapApplication...');
+        
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => this.initializeApp());
         } else {
@@ -16,39 +17,41 @@ class MapApplication {
     }
 
     initializeApp() {
-        console.log('Initializing Icewind Dale Interactive Map...');
+        console.log('Initializing application...');
         
-        // Check if required elements exist
-        if (!this.validateRequiredElements()) {
-            console.error('Required DOM elements not found!');
+        // Validate DOM elements
+        if (!this.validateDOM()) {
+            console.error('Required DOM elements missing!');
             return;
         }
         
-        // Initialize the main map
+        // Initialize map
         this.map = new InteractiveMap();
         
-        // Setup additional UI components
-        this.setupLegendInteractions();
+        // Setup additional features
         this.setupKeyboardShortcuts();
-        this.setupAccessibility();
-        
-        // Add custom event listeners
-        this.setupCustomEvents();
+        this.setupLegendInteractions();
         
         this.isInitialized = true;
-        console.log('Icewind Dale Interactive Map initialized successfully');
+        console.log('Application initialized successfully!');
         
-        // Debug info
+        // Debug info after initialization
         setTimeout(() => {
             if (this.map && this.map.markerManager) {
-                console.log(`Map loaded with ${this.map.markerManager.markers.length} markers`);
-                console.log(`Marker elements created: ${this.map.markerManager.markerElements.length}`);
+                console.log(`Map ready with ${this.map.markerManager.markers.length} markers`);
             }
-        }, 1000);
+        }, 500);
     }
 
-    validateRequiredElements() {
-        const required = ['mapContainer', 'mapImage', 'zoomSlider', 'zoomIn', 'zoomOut'];
+    validateDOM() {
+        const required = [
+            'mapContainer',
+            'mapImage', 
+            'zoomIn',
+            'zoomOut',
+            'coordinates'
+        ];
+        
         const missing = required.filter(id => !document.getElementById(id));
         
         if (missing.length > 0) {
@@ -59,105 +62,32 @@ class MapApplication {
         return true;
     }
 
-    setupLegendInteractions() {
-        const legend = document.querySelector('.legend');
-        if (!legend) {
-            console.warn('Legend element not found');
-            return;
-        }
-
-        // Make legend items clickable to toggle marker types
-        const legendItems = legend.querySelectorAll('.legend-item');
-        legendItems.forEach(item => {
-            const markerElement = item.querySelector('.legend-marker');
-            if (!markerElement) return;
-
-            // Determine marker type from background color
-            const backgroundColor = window.getComputedStyle(markerElement).backgroundColor;
-            let markerType = this.getMarkerTypeFromColor(backgroundColor);
-
-            if (markerType) {
-                item.style.cursor = 'pointer';
-                item.setAttribute('title', `Click to toggle ${MARKER_TYPES[markerType].label}`);
-                
-                item.addEventListener('click', () => {
-                    this.toggleMarkerType(markerType, item);
-                });
-            }
-        });
-    }
-
-    getMarkerTypeFromColor(color) {
-        // Convert RGB to hex or match against known colors
-        const colorMap = {
-            'rgb(76, 175, 80)': 'town',      // #4CAF50
-            'rgb(33, 150, 243)': 'poi',      // #2196F3
-            'rgb(156, 39, 176)': 'dungeon',  // #9C27B0
-            'rgb(255, 152, 0)': 'camp',      // #FF9800
-            'rgb(255, 68, 68)': 'custom'     // #ff4444
-        };
-        
-        return colorMap[color] || null;
-    }
-
-    toggleMarkerType(markerType, legendItem) {
-        if (!this.map || !this.map.markerManager) {
-            console.warn('Map or marker manager not available');
-            return;
-        }
-
-        // Toggle markers
-        this.map.markerManager.toggleMarkersByType(markerType);
-        
-        // Update legend item appearance
-        const isHidden = legendItem.style.opacity === '0.5';
-        legendItem.style.opacity = isHidden ? '1' : '0.5';
-        
-        // Update title
-        const action = isHidden ? 'Hide' : 'Show';
-        legendItem.setAttribute('title', `Click to ${action.toLowerCase()} ${MARKER_TYPES[markerType].label}`);
-    }
-
     setupKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
-            // Only handle shortcuts if not typing in an input
+            // Don't handle if user is typing
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
                 return;
             }
 
-            // Don't interfere with map's own keyboard handling
+            // Don't interfere with map's built-in shortcuts
             if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', '+', '-', '=', '0'].includes(e.key)) {
                 return;
             }
 
-            switch(e.key) {
+            switch(e.key.toLowerCase()) {
                 case 'h':
-                case 'H':
                     e.preventDefault();
                     this.showHelp();
                     break;
                 case 'r':
-                case 'R':
                     e.preventDefault();
                     if (this.map) this.map.resetView();
                     break;
-                case 'f':
-                case 'F':
+                case 'd':
                     e.preventDefault();
-                    this.toggleFullscreen();
+                    if (this.map) this.map.debugInfo();
                     break;
-                case 'l':
-                case 'L':
-                    e.preventDefault();
-                    this.toggleLegend();
-                    break;
-                case 'c':
-                case 'C':
-                    e.preventDefault();
-                    this.toggleCoordinates();
-                    break;
-                case 'Escape':
-                    // Close any open popups
+                case 'escape':
                     if (this.map && this.map.markerManager) {
                         this.map.markerManager.closePopup();
                     }
@@ -166,145 +96,53 @@ class MapApplication {
         });
     }
 
-    setupAccessibility() {
-        // Add skip link for screen readers
-        const skipLink = document.createElement('a');
-        skipLink.href = '#mapContainer';
-        skipLink.textContent = 'Skip to map';
-        skipLink.className = 'sr-only';
-        skipLink.style.cssText = `
-            position: absolute;
-            left: -10000px;
-            top: auto;
-            width: 1px;
-            height: 1px;
-            overflow: hidden;
-        `;
-        
-        skipLink.addEventListener('focus', () => {
-            skipLink.style.cssText = `
-                position: absolute;
-                left: 6px;
-                top: 7px;
-                z-index: 999999;
-                padding: 8px 16px;
-                background: #000;
-                color: #fff;
-                text-decoration: none;
-                border-radius: 3px;
-            `;
-        });
-        
-        skipLink.addEventListener('blur', () => {
-            skipLink.style.cssText = `
-                position: absolute;
-                left: -10000px;
-                top: auto;
-                width: 1px;
-                height: 1px;
-                overflow: hidden;
-            `;
-        });
-        
-        document.body.insertBefore(skipLink, document.body.firstChild);
-
-        // Add ARIA labels to main components
-        const mapContainer = document.getElementById('mapContainer');
-        if (mapContainer) {
-            mapContainer.setAttribute('role', 'application');
-            mapContainer.setAttribute('aria-label', 'Interactive map of Icewind Dale');
-        }
+    setupLegendInteractions() {
+        // This can be enhanced later
+        console.log('Legend interactions ready');
     }
 
-    setupCustomEvents() {
-        // Custom event for when markers are loaded
-        document.addEventListener('markersLoaded', (e) => {
-            console.log(`Loaded ${e.detail.count} markers`);
-        });
-
-        // Custom event for marker clicks
-        document.addEventListener('markerClicked', (e) => {
-            console.log(`Marker clicked: ${e.detail.marker.name}`);
-        });
-    }
-
-    // Utility methods
     showHelp() {
         const helpText = `
-Icewind Dale Interactive Map - Controls:
+ICEWIND DALE MAP CONTROLS:
 
 MOUSE/TOUCH:
 • Drag: Pan the map
 • Scroll wheel: Zoom in/out
-• Pinch gesture: Zoom (mobile)
-• Double-click: Zoom to location
+• Double-click: Smart zoom
 • Click markers: Show details
 
 KEYBOARD:
-• Arrow keys: Pan the map
+• Arrow keys: Pan map
 • + / - : Zoom in/out
-• 0: Reset view to center
+• 0: Reset to initial view
 • H: Show this help
-• R: Reset to center view
-• F: Toggle fullscreen
-• L: Toggle legend visibility
-• C: Toggle coordinates display
+• R: Reset view
+• D: Debug info
 • Escape: Close popups
 
-LEGEND:
-• Click legend items to toggle marker types
-• Green: Towns and settlements
-• Blue: Points of interest
-• Purple: Dungeons (custom)
-• Orange: Camps (custom)
-• Red: Custom markers
+BUTTONS:
+• + button: Zoom in
+• - button: Zoom out
 
-COORDINATES:
-• Hover over map to see X,Y coordinates
-• Use these coordinates to add new markers
+MAP FEATURES:
+• Green markers: Towns
+• Blue markers: Points of interest
+• Purple markers: Dungeons
+• Orange markers: Camps
+• Red markers: Custom locations
         `;
         
         alert(helpText.trim());
     }
 
-    toggleFullscreen() {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(err => {
-                console.warn('Fullscreen not supported or denied:', err);
-            });
-        } else {
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-            }
-        }
-    }
-
-    toggleLegend() {
-        const legend = document.querySelector('.legend');
-        if (legend) {
-            const isHidden = legend.style.display === 'none';
-            legend.style.display = isHidden ? 'block' : 'none';
-            console.log(`Legend ${isHidden ? 'shown' : 'hidden'}`);
-        }
-    }
-
-    toggleCoordinates() {
-        const coordinates = document.querySelector('.coordinates');
-        if (coordinates) {
-            const isHidden = coordinates.style.display === 'none';
-            coordinates.style.display = isHidden ? 'block' : 'none';
-            console.log(`Coordinates ${isHidden ? 'shown' : 'hidden'}`);
-        }
-    }
-
-    // Public API for external usage
+    // Public API
     getMap() {
         return this.map;
     }
 
     addCustomMarker(x, y, name, description, type = 'custom') {
         if (!this.map || !this.map.markerManager) {
-            console.error('Map not initialized yet');
+            console.error('Map not ready yet');
             return null;
         }
 
@@ -315,117 +153,55 @@ COORDINATES:
             type: type,
             name: name,
             description: description,
-            notable: 'Custom marker added by user'
+            notable: 'User added marker'
         };
 
-        console.log('Adding custom marker:', marker);
         return this.map.markerManager.addMarker(marker);
     }
 
-    exportMapData() {
-        if (!this.map || !this.map.markerManager) return null;
-        
-        return {
-            markers: this.map.markerManager.exportMarkers(),
-            mapState: {
-                zoom: this.map.scale,
-                center: {
-                    x: -this.map.translateX / this.map.scale + window.innerWidth / 2 / this.map.scale,
-                    y: -this.map.translateY / this.map.scale + window.innerHeight / 2 / this.map.scale
-                }
-            },
-            timestamp: new Date().toISOString()
-        };
-    }
-
-    importMapData(data) {
-        if (!this.map || !this.map.markerManager) return false;
-        
-        try {
-            if (data.markers) {
-                this.map.markerManager.importMarkers(data.markers);
-            }
-            
-            if (data.mapState) {
-                if (data.mapState.zoom) {
-                    this.map.scale = data.mapState.zoom;
-                    this.map.zoomSlider.value = this.map.scale;
-                    this.map.updateZoomLevel();
-                }
-                
-                if (data.mapState.center) {
-                    this.map.panTo(data.mapState.center.x, data.mapState.center.y);
-                }
-            }
-            
-            return true;
-        } catch (error) {
-            console.error('Failed to import map data:', error);
-            return false;
-        }
-    }
-
-    // Search functionality
     searchLocations(query) {
         if (!this.map || !this.map.markerManager) return [];
-        
         return this.map.markerManager.searchMarkers(query);
     }
 
-    // Navigate to a specific location
     goToLocation(locationId) {
-        if (!this.map || !this.map.markerManager) return false;
-        
-        const marker = this.map.markerManager.getMarkerById(locationId);
-        if (marker) {
-            this.map.zoomToMarker(locationId);
-            return true;
-        }
-        return false;
+        if (!this.map) return false;
+        this.map.zoomToMarker(locationId);
+        return true;
     }
 
-    // Debug methods
     debugInfo() {
         if (!this.isInitialized) {
-            console.log('Map not yet initialized');
+            console.log('Application not yet initialized');
             return;
         }
         
-        console.log('=== MAP DEBUG INFO ===');
-        console.log('Map scale:', this.map.scale);
-        console.log('Map translation:', { x: this.map.translateX, y: this.map.translateY });
-        console.log('Map dimensions:', { width: this.map.mapWidth, height: this.map.mapHeight });
-        console.log('Markers loaded:', this.map.markerManager.markers.length);
-        console.log('Marker elements:', this.map.markerManager.markerElements.length);
-        console.log('Current bounds:', this.map.getCurrentBounds());
+        console.log('=== APPLICATION DEBUG ===');
+        console.log('App initialized:', this.isInitialized);
+        console.log('Map available:', !!this.map);
         
-        // List all markers
-        console.log('Markers:');
-        this.map.markerManager.markers.forEach(marker => {
-            console.log(`  - ${marker.name} (${marker.type}) at (${marker.x}, ${marker.y})`);
-        });
+        if (this.map) {
+            this.map.debugInfo();
+        }
     }
 }
 
-// Global app instance
+// Global variables
 let mapApp;
 
-// Initialize the application
+// Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM loaded, initializing map application...');
+    console.log('DOM ready, starting application...');
     mapApp = new MapApplication();
     
-    // Make mapApp globally accessible for debugging and external scripts
+    // Make globally accessible
     window.mapApp = mapApp;
-    
-    // Add debug function to window
-    window.debugMap = () => mapApp.debugInfo();
 });
 
-// Global utility functions for easy access
+// Global utility functions
 window.addMarker = function(x, y, name, description, type = 'custom') {
     if (!mapApp || !mapApp.isInitialized) {
-        console.error('Map not initialized yet. Please wait a moment and try again.');
+        console.error('Map not ready. Please wait for initialization.');
         return null;
     }
     return mapApp.addCustomMarker(x, y, name, description, type);
@@ -439,38 +215,31 @@ window.goTo = function(locationId) {
     return mapApp ? mapApp.goToLocation(locationId) : false;
 };
 
-window.exportMap = function() {
-    return mapApp ? mapApp.exportMapData() : null;
+window.debugMap = function() {
+    if (mapApp) {
+        mapApp.debugInfo();
+    } else {
+        console.log('Map application not available');
+    }
 };
 
-window.importMap = function(data) {
-    return mapApp ? mapApp.importMapData(data) : false;
+window.resetMap = function() {
+    if (mapApp && mapApp.map) {
+        mapApp.map.resetView();
+    }
 };
 
-// Add helpful console messages
-console.log('Icewind Dale Interactive Map - Available global functions:');
-console.log('- addMarker(x, y, name, description, type)');
-console.log('- searchMap(query)');
-console.log('- goTo(locationId)');
-console.log('- exportMap()');
-console.log('- importMap(data)');
-console.log('- debugMap()');
-console.log('Press H key for help once the map loads.');
-
-// Error handling for unhandled errors
+// Error handling
 window.addEventListener('error', (e) => {
-    console.error('Unhandled error in map application:', e.error);
+    console.error('Application error:', e.error);
 });
 
-// Service Worker registration for offline functionality (optional)
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-            .then(registration => {
-                console.log('SW registered: ', registration);
-            })
-            .catch(registrationError => {
-                console.log('SW registration failed: ', registrationError);
-            });
-    });
+// Console welcome message
+console.log('Icewind Dale Interactive Map');
+console.log('Available functions: addMarker(), searchMap(), goTo(), debugMap(), resetMap()');
+console.log('Press H for help once loaded');
+
+// Export for modules if needed
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = MapApplication;
 }
