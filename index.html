@@ -145,6 +145,33 @@
             text-align: center;
         }
 
+        .legend {
+            min-width: 180px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 4px 0;
+        }
+
+        .legend-marker {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+        }
+
+        .legend-marker.town { background: #4ade80; }
+        .legend-marker.poi { background: #60a5fa; }
+        .legend-marker.dungeon { background: #c084fc; }
+        .legend-marker.camp { background: #fb923c; }
+
+        .legend-item span {
+            font-size: 14px;
+            color: #fff;
+        }
         .popup {
             position: absolute;
             background: rgba(0, 0, 0, 0.95);
@@ -206,6 +233,29 @@
         <div class="control-group">
             <div id="coordinates">X: 0, Y: 0</div>
         </div>
+            <div class="control-group">
+        <div id="coordinates">X: 0, Y: 0</div>
+    </div>
+ 
+    <div class="control-group legend">
+        <div class="legend-item">
+            <div class="legend-marker town"></div>
+            <span>Town</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-marker poi"></div>
+            <span>Point of Interest</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-marker dungeon"></div>
+            <span>Dungeon</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-marker camp"></div>
+            <span>Camp</span>
+        </div>
+    </div>
+</div>
     </div>
 
     <div class="popup" id="popup"></div>
@@ -280,20 +330,30 @@
                 this.loadMarkers();
             }
             
-            setupMap() {
-                // Calculate initial scale to fit map in viewport
+                        setupMap() {
                 const containerWidth = this.container.clientWidth;
                 const containerHeight = this.container.clientHeight;
                 
                 const scaleX = containerWidth / config.mapWidth;
                 const scaleY = containerHeight / config.mapHeight;
-                this.scale = Math.min(scaleX, scaleY) * 0.9; // 90% to add padding
+                this.scale = Math.min(scaleX, scaleY); // Remove the 0.9 multiplier
                 
                 // Center the map
                 this.x = (containerWidth - config.mapWidth * this.scale) / 2;
                 this.y = (containerHeight - config.mapHeight * this.scale) / 2;
                 
                 this.updateTransform();
+            }
+            
+            constrainPosition() {
+                const containerWidth = this.container.clientWidth;
+                const containerHeight = this.container.clientHeight;
+                const scaledWidth = config.mapWidth * this.scale;
+                const scaledHeight = config.mapHeight * this.scale;
+                
+                // Set strict boundaries to prevent showing gray areas
+                this.x = Math.min(0, Math.max(containerWidth - scaledWidth, this.x));
+                this.y = Math.min(0, Math.max(containerHeight - scaledHeight, this.y));
             }
             
             setupEventListeners() {
@@ -329,27 +389,33 @@
             }
             
             startDrag(e) {
+                if (e.button !== undefined && e.button !== 0) return;
                 this.isDragging = true;
                 this.container.classList.add('grabbing');
                 this.startX = e.clientX - this.x;
                 this.startY = e.clientY - this.y;
+                
+                e.preventDefault();
             }
             
             drag(e) {
                 if (!this.isDragging) return;
                 
-                this.x = e.clientX - this.startX;
-                this.y = e.clientY - this.startY;
-                
-                this.constrainPosition();
-                this.updateTransform();
+                requestAnimationFrame(() => {
+                    this.x = e.clientX - this.startX;
+                    this.y = e.clientY - this.startY;
+                    
+                    this.constrainPosition();
+                    this.updateTransform();
+                });
             }
             
             endDrag() {
+                if (!this.isDragging) return;
                 this.isDragging = false;
                 this.container.classList.remove('grabbing');
             }
-            
+                        
             wheelZoom(e) {
                 const rect = this.container.getBoundingClientRect();
                 const mouseX = e.clientX - rect.left;
