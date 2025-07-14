@@ -265,7 +265,6 @@
         const config = {
             mapWidth: 6000,
             mapHeight: 4215,
-            minZoom: 0.1,
             maxZoom: 4,
             zoomStep: 0.25,
             wheelZoomStep: 0.1
@@ -334,17 +333,22 @@
                 const containerWidth = this.container.clientWidth;
                 const containerHeight = this.container.clientHeight;
                 
-                // Calculate scale to ensure map always fills the screen
+                // Calculate minimum scale needed to fill either width or height
                 const scaleX = containerWidth / config.mapWidth;
                 const scaleY = containerHeight / config.mapHeight;
-                this.scale = Math.max(scaleX, scaleY); // Changed from Math.min to Math.max
+                const minScale = Math.max(scaleX, scaleY);
+                
+                // Set initial scale to minScale if not yet set
+                if (!this.scale || this.scale < minScale) {
+                    this.scale = minScale;
+                }
+                
+                // Store minScale for zoom operations
+                this.minScale = minScale;
                 
                 // Center the map
                 this.x = (containerWidth - config.mapWidth * this.scale) / 2;
                 this.y = (containerHeight - config.mapHeight * this.scale) / 2;
-                
-                // Update config min zoom to ensure map always fills screen
-                config.minZoom = Math.max(scaleX, scaleY);
                 
                 this.constrainPosition();
                 this.updateTransform();
@@ -382,13 +386,47 @@
                 this.container.addEventListener('mouseleave', () => this.endDrag());
                 
                 // Touch events
-                this.container.addEventListener('touchstart', (e) => this.startDrag(e.touches[0]));
+                let touchStartTime = 0;
+                let lastTap = 0;
+                let touchDistance = 0;
+                let lastTouchTime = 0;
+                
+                this.container.addEventListener('touchstart', (e) => {
+                    if (e.touches.length === 2) {
+                        // Store initial distance for pinch zoom
+                        touchDistance = this.getTouchDistance(e.touches);
+                    } else if (e.touches.length === 1) {
+                        touchStartTime = Date.now();
+                        const timeSinceLastTap = touchStartTime - lastTap;
+                        if (timeSinceLastTap < 300) {
+                            // Double tap detected
+                            this.handleDoubleTap(e.touches[0]);
+                            e.preventDefault();
+                        }
+                        this.startDrag(e.touches[0]);
+                    }
+                });
+
                 this.container.addEventListener('touchmove', (e) => {
                     e.preventDefault();
-                    this.drag(e.touches[0]);
+                    if (e.touches.length === 2) {
+                        // Handle pinch zoom
+                        const newDistance = this.getTouchDistance(e.touches);
+                        const delta = (newDistance - touchDistance) * 0.005; // Adjust sensitivity
+                        touchDistance = newDistance;
+                        
+                        this.handlePinchZoom(e, delta);
+                    } else if (e.touches.length === 1) {
+                        this.drag(e.touches[0]);
+                    }
                 });
-                this.container.addEventListener('touchend', () => this.endDrag());
-                
+
+                this.container.addEventListener('touchend', (e) => {
+                    if (e.touches.length === 0) {
+                        lastTap = Date.now();
+                    }
+                    this.endDrag();
+                });
                 // Wheel zoom
                 this.container.addEventListener('wheel', (e) => {
                     e.preventDefault();
@@ -441,7 +479,7 @@
                 
                 // Calculate zoom
                 const delta = e.deltaY > 0 ? -config.wheelZoomStep : config.wheelZoomStep;
-                const newScale = Math.max(config.minZoom, Math.min(config.maxZoom, this.scale + delta));
+                const newScale = Math.max(this.minScale, Math.min(config.maxZoom, this.scale + delta));
                 
                 if (newScale !== this.scale) {
                     // Calculate new position to zoom toward mouse position
@@ -454,9 +492,9 @@
                     this.updateTransform();
                 }
             }
-            
+
             zoom(delta) {
-                const newScale = Math.max(config.minZoom, Math.min(config.maxZoom, this.scale + delta));
+                const newScale = Math.max(this.minScale, Math.min(config.maxZoom, this.scale + delta));
                 
                 if (newScale !== this.scale) {
                     // Zoom to center
@@ -492,6 +530,49 @@
             updateTransform() {
                 this.viewport.style.transform = `translate(${this.x}px, ${this.y}px) scale(${this.scale})`;
                 this.updateMarkerScale();
+            }
+
+            getTouchDistance(touches) {
+                const dx = touches[0].clientX - touches[1].clientX;
+                const dy = touches[0].clientY - touches[1].clientY;
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+
+            handlePinchZoom(e, delta) {
+                const rect = this.container.getBoundingClientRect();
+                const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+                const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
+                
+                const newScale = Math.max(this.minScale, Math.min(config.maxZoom, this.scale + delta));
+                
+                if (newScale !== this.scale) {
+                    const scaleRatio = newScale / this.scale;
+                    this.x = centerX - (centerX - this.x) * scaleRatio;
+                    this.y = centerY - (centerY - this.y) * scaleRatio;
+                    this.scale = newScale;
+                    
+                    this.constrainPosition();
+                    this.updateTransform();
+                }
+            }
+
+            handleDoubleTap(touch) {
+                const rect = this.container.getBoundingClientRect();
+                const mouseX = touch.clientX - rect.left;
+                const mouseY = touch.clientY - rect.top;
+                
+                const delta = config.zoomStep;
+                const newScale = Math.max(this.minScale, Math.min(config.maxZoom, this.scale + delta));
+                
+                if (newScale !== this.scale) {
+                    const scaleRatio = newScale / this.scale;
+                    this.x = mouseX - (mouseX - this.x) * scaleRatio;
+                    this.y = mouseY - (mouseY - this.y) * scaleRatio;
+                    this.scale = newScale;
+                    
+                    this.constrainPosition();
+                    this.updateTransform();
+                }
             }
             
             updateCoordinates(e) {
