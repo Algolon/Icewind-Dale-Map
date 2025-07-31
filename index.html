@@ -56,6 +56,15 @@
             pointer-events: none;
         }
 
+        /* Zoom % read-out */
+        #zoom-level {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 55px;
+            font: 16px/1 monospace;
+        }
+
         .marker {
             position: absolute;
             width: 24px;
@@ -238,6 +247,7 @@
         <div class="control-group zoom-controls">
             <button class="btn" id="zoom-in" aria-label="Zoom in">+</button>
             <button class="btn" id="zoom-out" aria-label="Zoom out">−</button>
+            <span id="zoom-level">100 %</span>
         </div>
         <div class="control-group">
             <div id="coordinates">X: 0, Y: 0</div>
@@ -269,6 +279,7 @@
             zoomStep: 0.25,
             wheelZoomStep: 0.1
             ,
+            initialFit: width,
             initialCenter: { x: 2300, y: 2400 }
         };
 
@@ -339,9 +350,13 @@
                 const scaleY = containerHeight / config.mapHeight;
                 this.minScale = Math.max(scaleX, scaleY);
                 
-                // Set initial scale if not set or too small
-                if (!this.scale || this.scale < this.minScale) {
-                    this.scale = this.minScale;
+                // Choose the initial zoom mode
+                if (config.initialFit === 'width') {
+                this.scale = scaleX;          // show all width (letter-boxes top/bottom)
+                } else if (config.initialFit === 'height') {
+                   this.scale = scaleY;          // show all height (letter-boxes left/right)
+                } else {                          // default = “cover”
+                this.scale = this.minScale;
                 }
                 
                 // First load → centre on a specific image coordinate if supplied
@@ -355,6 +370,7 @@
                 
                 this.constrainPosition();
                 this.updateTransform();
+                this.updateZoomLevel();
             }
 
             setupEventListeners() {
@@ -452,6 +468,7 @@
                     
                     this.constrainPosition();
                     this.updateTransform();
+                    this.updateZoomLevel();
                 }
             }
 
@@ -470,6 +487,7 @@
                     
                     this.constrainPosition();
                     this.updateTransform();
+                    this.updateZoomLevel();
                 }
             }
             
@@ -506,6 +524,11 @@
                 this.updateMarkerScale();
             }
 
+            updateZoomLevel() {
+                const pct = Math.round(this.scale / this.minScale * 100);
+                document.getElementById('zoom-level').textContent = pct + ' %';
+            }
+
             getTouchDistance(touches) {
                 const dx = touches[0].clientX - touches[1].clientX;
                 const dy = touches[0].clientY - touches[1].clientY;
@@ -527,6 +550,7 @@
                     
                     this.constrainPosition();
                     this.updateTransform();
+                    this.updateZoomLevel();
                 }
             }
 
@@ -546,6 +570,7 @@
                     
                     this.constrainPosition();
                     this.updateTransform();
+                    this.updateZoomLevel();
                 }
             }
             
