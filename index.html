@@ -269,7 +269,7 @@
             zoomStep: 0.25,
             wheelZoomStep: 0.1
             ,
-            initialCenter: { x: 1950, y: 2390 }
+            initialCenter: { x: 2300, y: 2400 }
         };
 
         // Initial markers data
@@ -344,28 +344,19 @@
                     this.scale = this.minScale;
                 }
                 
-                // Center the map
-                this.x = (containerWidth - config.mapWidth * this.scale) / 2;
-                this.y = (containerHeight - config.mapHeight * this.scale) / 2;
+                // First load → centre on a specific image coordinate if supplied
+                if (config.initialCenter) {
+                    this.x = containerWidth  / 2 - config.initialCenter.x * this.scale;
+                    this.y = containerHeight / 2 - config.initialCenter.y * this.scale;
+                } else {
+                    this.x = (containerWidth  - config.mapWidth  * this.scale) / 2;
+                    this.y = (containerHeight - config.mapHeight * this.scale) / 2;
+                }
                 
                 this.constrainPosition();
                 this.updateTransform();
             }
 
-            constrainPosition() {
-                const containerWidth = this.container.clientWidth;
-                const containerHeight = this.container.clientHeight;
-                const scaledWidth = config.mapWidth * this.scale;
-                const scaledHeight = config.mapHeight * this.scale;
-                
-                // Calculate bounds to keep image edges at container edges
-                const minX = containerWidth - scaledWidth;
-                const minY = containerHeight - scaledHeight;
-                
-                // Constrain position
-                this.x = Math.min(0, Math.max(minX, this.x));
-                this.y = Math.min(0, Math.max(minY, this.y));
-            }
             setupEventListeners() {
                 // Mouse events
                 this.container.addEventListener('mousedown', (e) => this.startDrag(e));
