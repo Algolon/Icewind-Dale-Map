@@ -85,10 +85,6 @@
             background: #c084fc;
         }
 
-        .marker.camp {
-            background: #fb923c;
-        }
-
         .marker.custom {
             background: #ef4444;
         }
@@ -209,7 +205,6 @@
         .marker-dot.town { background: #4ade80; }
         .marker-dot.poi { background: #60a5fa; }
         .marker-dot.dungeon { background: #c084fc; }
-        .marker-dot.camp { background: #fb923c; }
 
         .legend-item span {
             font-size: 14px;
@@ -259,10 +254,6 @@
                 <div class="marker-dot dungeon"></div>
                 <span>Dungeon</span>
             </div>
-            <div class="legend-item">
-                <div class="marker-dot camp"></div>
-                <span>Camp</span>
-            </div>
         </div>
     </div>
 
@@ -302,9 +293,7 @@
             { id: 'the-greenery', x: 710, y: 3005, type: 'poi', name: 'The Greenery', description: 'Zhentarim Hideout. A prima spot of the Black Network, nestled away in a hotspring forest.' },
 
             
-            // Reghed Camps
-            //{ id: 'elk-tribe', x: 3800, y: 1500, type: 'camp', name: 'Tribe of the Elk', description: 'Nomadic Reghed tribe, friendly to outsiders.' }
-        ];
+           ];
 
         class InteractiveMap {
             constructor() {
