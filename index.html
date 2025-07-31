@@ -267,6 +267,8 @@
             maxZoom: 4,
             zoomStep: 0.25,
             wheelZoomStep: 0.1
+            ,
+            initialCenter: { x: 1950, y: 2390 }
         };
 
         // Initial markers data
@@ -354,13 +356,6 @@
                 const containerHeight = this.container.clientHeight;
                 const scaledWidth = config.mapWidth * this.scale;
                 const scaledHeight = config.mapHeight * this.scale;
-                
-                // If scaled size is smaller than container, force it to be at least container size
-                if (this.scale < this.minScale) {
-                    this.scale = this.minScale;
-                    scaledWidth = config.mapWidth * this.scale;
-                    scaledHeight = config.mapHeight * this.scale;
-                }
                 
                 // Calculate bounds to keep image edges at container edges
                 const minX = containerWidth - scaledWidth;
@@ -489,18 +484,30 @@
             constrainPosition() {
                 const containerWidth = this.container.clientWidth;
                 const containerHeight = this.container.clientHeight;
+
                 const scaledWidth = config.mapWidth * this.scale;
                 const scaledHeight = config.mapHeight * this.scale;
-                
-                // Don't allow map to go too far outside viewport
-                const maxX = containerWidth * 0.9;
-                const minX = containerWidth * 0.1 - scaledWidth;
-                const maxY = containerHeight * 0.9;
-                const minY = containerHeight * 0.1 - scaledHeight;
-                
-                this.x = Math.max(minX, Math.min(maxX, this.x));
-                this.y = Math.max(minY, Math.min(maxY, this.y));
+
+                // Horizontal clamp
+                if (scaledWidth <= containerWidth) {
+                    // Image narrower than view → keep centered
+                    this.x = (containerWidth - scaledWidth) / 2;
+                } else {
+                    const minX = containerWidth - scaledWidth;
+                    const maxX = 0;
+                    this.x = Math.max(minX, Math.min(maxX, this.x));
+                }
+
+                // Vertical clamp
+                if (scaledHeight <= containerHeight) {
+                    this.y = (containerHeight - scaledHeight) / 2;
+                } else {
+                    const minY = containerHeight - scaledHeight;
+                    const maxY = 0;
+                    this.y = Math.max(minY, Math.min(maxY, this.y));
+                }
             }
+
             
             updateTransform() {
                 this.viewport.style.transform = `translate(${this.x}px, ${this.y}px) scale(${this.scale})`;
