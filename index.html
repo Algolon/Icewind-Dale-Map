@@ -36,7 +36,6 @@
         #map-viewport {
             position: absolute;
             transform-origin: 0 0;
-            will-change: transform;
         }
 
         #map-image {
@@ -54,6 +53,7 @@
             height: 100%;
             z-index: 10;
             pointer-events: none;
+            --mScale: 1;
         }
 
         .marker {
@@ -62,7 +62,7 @@
             height: 24px;
             border-radius: 50%;
             border: 3px solid #fff;
-            transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%) scale(var(--mScale, 1));
             cursor: pointer;
             pointer-events: auto;
             transition: transform 0.2s;
@@ -70,7 +70,8 @@
         }
 
         .marker:hover {
-            transform: translate(-50%, -50%) scale(1.2);
+            transform: translate(-50%, -50%)
+                scale(calc(var(--mScale, 1) * 1.2));
             z-index: 101;
         }
 
@@ -227,9 +228,17 @@
     </style>
 </head>
 <body>
-    <div id="map-container">
+ <div id="map-container">
         <div id="map-viewport">
-            <img id="map-image" src="map.jpg" alt="Icewind Dale Map">
+            <picture id="map-picture">
+                <source
+                    media="(max-width: 768px)"
+                    srcset="map-webp-2048.webp" />
+                <img
+                    id="map-image"
+                    src="map-webp.webp"
+                    alt="Icewind Dale map" />
+            </picture>
             <div id="marker-layer"></div>
         </div>
     </div>
@@ -267,11 +276,17 @@
             mapHeight: 4215,
             maxZoom: 4,
             zoomStep: 0.25,
-            wheelZoomStep: 0.1
-            ,
+            wheelZoomStep: 0.1,
             initialCenter: { x: 2300, y: 2400 }
         };
 
+        // ✱ Detect coarse input to tweak zoom limits on phones
+        const isMobile = window.matchMedia("(pointer:coarse)").matches;
+        if (isMobile) {
+            config.minZoom = 0.8; // optional lower bound
+            let lastTapTime = 0;
+            const DOUBLE_TAP_DELAY = 300; // ms
+        }
         // Initial markers data
         const markersData = [
             // Ten-Towns
@@ -298,6 +313,14 @@
             
            ];
 
+           const img  = document.getElementById('map-image');
+            img.addEventListener('load', () => {
+            CONFIG.mapWidth  = img.naturalWidth;
+            CONFIG.mapHeight = img.naturalHeight;
+            CONFIG.maxZoom   = 2;               // no up-scaling on phones
+            initViewport();                     // your existing centering / scaling call
+            });
+
         class InteractiveMap {
             constructor() {
                 this.container = document.getElementById('map-container');
@@ -318,41 +341,46 @@
                 this.init();
             }
             
-            init() {
-                // Wait for image to load
+             init() {
+                // Wait for image to load → update config & layout
                 if (this.image.complete) {
-                    this.setupMap();
+                    this.onImageLoad();
                 } else {
-                    this.image.addEventListener('load', () => this.setupMap());
+                    this.image.addEventListener("load", () => this.onImageLoad());
                 }
-                
+
                 this.setupEventListeners();
                 this.loadMarkers();
             }
+
+            // ✱ runs once the correct bitmap has loaded (mobile/desktop)
+            onImageLoad() {
+                config.mapWidth = this.image.naturalWidth;
+                config.mapHeight = this.image.naturalHeight;
+                if (isMobile) config.maxZoom = 2;
+                this.setupMap();
+            }
             
             setupMap() {
-                const containerWidth = this.container.clientWidth;
-                const containerHeight = this.container.clientHeight;
-                
-                // Calculate minimum scale needed to fill container
-                const scaleX = containerWidth / config.mapWidth;
-                const scaleY = containerHeight / config.mapHeight;
+                const cw = this.container.clientWidth;
+                const ch = this.container.clientHeight;
+
+                const scaleX = cw / config.mapWidth;
+                const scaleY = ch / config.mapHeight;
                 this.minScale = Math.max(scaleX, scaleY);
-                
-                // Set initial scale if not set or too small
+
                 if (!this.scale || this.scale < this.minScale) {
                     this.scale = this.minScale;
                 }
-                
-                // First load → centre on a specific image coordinate if supplied
+
                 if (config.initialCenter) {
-                    this.x = containerWidth  / 2 - config.initialCenter.x * this.scale;
-                    this.y = containerHeight / 2 - config.initialCenter.y * this.scale;
+                    this.x = cw / 2 - config.initialCenter.x * this.scale;
+                    this.y = ch / 2 - config.initialCenter.y * this.scale;
                 } else {
-                    this.x = (containerWidth  - config.mapWidth  * this.scale) / 2;
-                    this.y = (containerHeight - config.mapHeight * this.scale) / 2;
+                    this.x = (cw - config.mapWidth * this.scale) / 2;
+                    this.y = (ch - config.mapHeight * this.scale) / 2;
                 }
-                
+
                 this.constrainPosition();
                 this.updateTransform();
             }
@@ -365,18 +393,23 @@
                 this.container.addEventListener('mouseleave', () => this.endDrag());
                 
                 // Touch events
-                    let touchDistance = 0;
-                    
-                    this.container.addEventListener('touchstart', (e) => {
-                        if (e.touches.length === 2) {
-                            e.preventDefault();
-                            touchDistance = this.getTouchDistance(e.touches);
-                        } else if (e.touches.length === 1) {
-                            this.startDrag(e.touches[0]);
+                let touchDistance = 0;
+                this.container.addEventListener(
+                    "touchstart",
+                    (e) => {onTouchStart(e);
+                    if (e.touches.length === 1) {    // ignore pinch
+                        const now = Date.now();
+                        if (now - lastTapTime < DOUBLE_TAP_DELAY) {
+                        handleDoubleTap(e.touches[0]);
+                        lastTapTime = 0;             // reset so a triple-tap acts like two doubles
+                        } else {
+                        lastTapTime = now;
                         }
-                    });
-
-                    this.container.addEventListener('touchmove', (e) => {
+                    }
+                    }, { passive: true });
+                this.container.addEventListener(
+                    "touchmove",
+                    (e) => {
                         e.preventDefault();
                         if (e.touches.length === 2) {
                             const newDistance = this.getTouchDistance(e.touches);
@@ -386,11 +419,11 @@
                         } else if (e.touches.length === 1) {
                             this.drag(e.touches[0]);
                         }
-                    });
+                    },
+                    { passive: false }
+                );
+                this.container.addEventListener("touchend", () => this.endDrag());
 
-                    this.container.addEventListener('touchend', () => {
-                        this.endDrag();
-                    });
                 // Wheel zoom
                 this.container.addEventListener('wheel', (e) => {
                     e.preventDefault();
@@ -407,19 +440,21 @@
                 // Window resize
                 window.addEventListener('resize', () => this.handleResize());
             }
-            
+           
+            // DRAG HELPERS
             startDrag(e) {
-                if (e.button !== undefined && e.button !== 0) return; // Only left mouse button
+                if (e.button !== undefined && e.button !== 0) return; // only left mouse
                 this.isDragging = true;
-                this.container.classList.add('grabbing');
+                this.container.classList.add("grabbing");
+                // ✱ promote viewport to GPU layer only while dragging
+                this.viewport.style.willChange = "transform";
                 this.startX = e.clientX - this.x;
                 this.startY = e.clientY - this.y;
-                e.preventDefault(); // Prevent text selection
+                e.preventDefault();
             }
 
             drag(e) {
                 if (!this.isDragging) return;
-                
                 requestAnimationFrame(() => {
                     this.x = e.clientX - this.startX;
                     this.y = e.clientY - this.startY;
@@ -431,48 +466,41 @@
             endDrag() {
                 if (!this.isDragging) return;
                 this.isDragging = false;
-                this.container.classList.remove('grabbing');
+                this.container.classList.remove("grabbing");
+                // ✱ give GPU memory back
+                this.viewport.style.willChange = "";
             }
             
+            //ZOOM HELPERS  
             wheelZoom(e) {
                 const rect = this.container.getBoundingClientRect();
-                const mouseX = e.clientX - rect.left;
-                const mouseY = e.clientY - rect.top;
-                
-                // Calculate zoom
+                const mx = e.clientX - rect.left;
+                const my = e.clientY - rect.top;
                 const delta = e.deltaY > 0 ? -config.wheelZoomStep : config.wheelZoomStep;
                 const newScale = Math.max(this.minScale, Math.min(config.maxZoom, this.scale + delta));
-                
-                if (newScale !== this.scale) {
-                    // Calculate new position to zoom toward mouse position
-                    const scaleRatio = newScale / this.scale;
-                    this.x = mouseX - (mouseX - this.x) * scaleRatio;
-                    this.y = mouseY - (mouseY - this.y) * scaleRatio;
-                    this.scale = newScale;
-                    
-                    this.constrainPosition();
-                    this.updateTransform();
-                }
+                if (newScale === this.scale) return;
+                const ratio = newScale / this.scale;
+                this.x = mx - (mx - this.x) * ratio;
+                this.y = my - (my - this.y) * ratio;
+                this.scale = newScale;
+                this.constrainPosition();
+                this.updateTransform();
             }
 
             zoom(delta) {
                 const newScale = Math.max(this.minScale, Math.min(config.maxZoom, this.scale + delta));
-                
-                if (newScale !== this.scale) {
-                    // Zoom to center
-                    const centerX = this.container.clientWidth / 2;
-                    const centerY = this.container.clientHeight / 2;
-                    
-                    const scaleRatio = newScale / this.scale;
-                    this.x = centerX - (centerX - this.x) * scaleRatio;
-                    this.y = centerY - (centerY - this.y) * scaleRatio;
-                    this.scale = newScale;
-                    
-                    this.constrainPosition();
-                    this.updateTransform();
-                }
+                if (newScale === this.scale) return;
+                const cx = this.container.clientWidth / 2;
+                const cy = this.container.clientHeight / 2;
+                const ratio = newScale / this.scale;
+                this.x = cx - (cx - this.x) * ratio;
+                this.y = cy - (cy - this.y) * ratio;
+                this.scale = newScale;
+                this.constrainPosition();
+                this.updateTransform();
             }
-            
+
+            //CORE LAYOUT
             constrainPosition() {
                 const containerWidth = this.container.clientWidth;
                 const containerHeight = this.container.clientHeight;
@@ -500,36 +528,53 @@
                 }
             }
 
-            
             updateTransform() {
                 this.viewport.style.transform = `translate(${this.x}px, ${this.y}px) scale(${this.scale})`;
                 this.updateMarkerScale();
             }
-
-            getTouchDistance(touches) {
-                const dx = touches[0].clientX - touches[1].clientX;
-                const dy = touches[0].clientY - touches[1].clientY;
-                return Math.sqrt(dx * dx + dy * dy);
+            
+            //MARKER HELPERS
+            loadMarkers() {
+                markersData.forEach((data) => this.addMarker(data));
             }
-
+            addMarker(data) {
+                const el = document.createElement("div");
+                el.className = `marker ${data.type}`;
+                el.style.left = `${data.x}px`;
+                el.style.top = `${data.y}px`;
+                el.dataset.id = data.id;
+                el.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    this.showPopup(data, el);
+                });
+                this.markerLayer.appendChild(el);
+                this.markers.push({ element: el, data });
+                this.updateMarkerScale();
+            }
+            updateMarkerScale() {
+                const s = Math.max(0.5, Math.min(2, 1 / this.scale));
+                this.markerLayer.style.setProperty("--mScale", s);
+            }
+            
+            // PINCH ZOOM HELPERS
+            getTouchDistance(ts) {
+                const dx = ts[0].clientX - ts[1].clientX;
+                const dy = ts[0].clientY - ts[1].clientY;
+                return Math.hypot(dx, dy);
+            }
             handlePinchZoom(e, delta) {
                 const rect = this.container.getBoundingClientRect();
-                const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
-                const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
-                
+                const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+                const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
                 const newScale = Math.max(this.minScale, Math.min(config.maxZoom, this.scale + delta));
-                
-                if (newScale !== this.scale) {
-                    const scaleRatio = newScale / this.scale;
-                    this.x = centerX - (centerX - this.x) * scaleRatio;
-                    this.y = centerY - (centerY - this.y) * scaleRatio;
-                    this.scale = newScale;
-                    
-                    this.constrainPosition();
-                    this.updateTransform();
-                }
+                if (newScale === this.scale) return;
+                const ratio = newScale / this.scale;
+                this.x = cx - (cx - this.x) * ratio;
+                this.y = cy - (cy - this.y) * ratio;
+                this.scale = newScale;
+                this.constrainPosition();
+                this.updateTransform();
             }
-
             handleDoubleTap(touch) {
                 const rect = this.container.getBoundingClientRect();
                 const mouseX = touch.clientX - rect.left;
@@ -551,52 +596,16 @@
             
             updateCoordinates(e) {
                 const rect = this.container.getBoundingClientRect();
-                const x = (e.clientX - rect.left - this.x) / this.scale;
-                const y = (e.clientY - rect.top - this.y) / this.scale;
-                
-                if (x >= 0 && x <= config.mapWidth && y >= 0 && y <= config.mapHeight) {
-                    this.coordDisplay.textContent = `X: ${Math.round(x)}, Y: ${Math.round(y)}`;
+                const px = (e.clientX - rect.left - this.x) / this.scale;
+                const py = (e.clientY - rect.top - this.y) / this.scale;
+                if (px >= 0 && px <= config.mapWidth && py >= 0 && py <= config.mapHeight) {
+                    this.coordDisplay.textContent = `X: ${Math.round(px)}, Y: ${Math.round(py)}`;
                 } else {
-                    this.coordDisplay.textContent = 'Outside map';
+                    this.coordDisplay.textContent = "Outside map";
                 }
             }
             
-            handleResize() {
-                this.setupMap();
-            }
-            
-            loadMarkers() {
-                markersData.forEach(markerData => {
-                    this.addMarker(markerData);
-                });
-            }
-            
-            addMarker(data) {
-                const marker = document.createElement('div');
-                marker.className = `marker ${data.type}`;
-                marker.style.left = `${data.x}px`;
-                marker.style.top = `${data.y}px`;
-                marker.dataset.id = data.id;
-                
-                marker.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    this.showPopup(data, marker);
-                });
-                
-                this.markerLayer.appendChild(marker);
-                this.markers.push({ element: marker, data });
-                
-                this.updateMarkerScale();
-            }
-            
-            updateMarkerScale() {
-                // Keep markers same visual size regardless of zoom
-                const markerScale = Math.max(0.5, Math.min(2, 1 / this.scale));
-                this.markers.forEach(({ element }) => {
-                    element.style.transform = `translate(-50%, -50%) scale(${markerScale})`;
-                });
-            }
-            
+            // POP UP HELPER 
             showPopup(data, marker) {
                 const isMobile = window.innerWidth <= 768;
                 
