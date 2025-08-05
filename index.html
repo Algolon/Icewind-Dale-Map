@@ -43,6 +43,10 @@
             max-width: none;
             position: relative;
             z-index: 1;
+            /* no context-menu / drag */
+            pointer-events: none;
+            -webkit-user-drag: none;
+            user-select: none;
         }
 
         #marker-layer {
@@ -340,6 +344,7 @@
                 this.container = document.getElementById('map-container');
                 this.viewport = document.getElementById('map-viewport');
                 this.image = document.getElementById('map-image');
+                this.image.addEventListener("contextmenu", (e) => e.preventDefault());
                 this.markerLayer = document.getElementById('marker-layer');
                 this.coordDisplay = document.getElementById('coordinates');
                 this.popup = document.getElementById('popup');
