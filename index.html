@@ -213,17 +213,18 @@
             color: #fff;
         }
 
+        /* === mobile layout overrides === */
         @media (max-width: 768px) {
-            #controls {
-                top: 10px;
-                right: 10px;
-            }
-            
-            .btn {
-                width: 35px;
-                height: 35px;
-                font-size: 18px;
-            }
+        #controls {        /* + / – buttons and coords */
+            top: 10px;
+            left: 10px;
+            right: auto;
+        }
+        #legend {          /* legend box */
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
         }
     </style>
 </head>
@@ -251,7 +252,8 @@
         <div class="control-group">
             <div id="coordinates">X: 0, Y: 0</div>
         </div>
-        <div class="control-group legend">
+    </div>
+    <div id=legend class="control-group legend">
             <div class="legend-item">
                 <div class="marker-dot town"></div>
                 <span>Town</span>
@@ -281,12 +283,13 @@
         };
 
         // ✱ Detect coarse input to tweak zoom limits on phones
-        const isMobile = window.matchMedia("(pointer:coarse)").matches;
-        if (isMobile) {
-            config.minZoom = 0.8; // optional lower bound
-            let lastTapTime = 0;
-            const DOUBLE_TAP_DELAY = 300; // ms
-        }
+        const isMobile          = window.matchMedia('(pointer:coarse)').matches;
+        if (isMobile) config.minZoom = 0.8;       // sane min zoom on phones
+
+        let lastTapTime         = 0;              // for double-tap detection
+        const DOUBLE_TAP_DELAY  = 300;            // ms
+        let pinchStartDistance  = 0;              // first span in a pinch
+    
         // Initial markers data
         const markersData = [
             // Ten-Towns
@@ -303,14 +306,25 @@
             
             // Points of Interest
             { id: 'kelvin-cairn', x: 2760, y: 1725, type: 'poi', name: 'Kelvin\'s Cairn', description: 'Tallest mountain in Icewind Dale, home to dwarven valley.' },
-            { id: 'revels-end', x: 2270, y: 580, type: 'poi', name: 'Revel\'s End', description: 'Faerûn\'s most desolate prison, and Naerth Maxildanarr forever home.' },
+            { id: 'revels-end', x: 2270, y: 580, type: 'poi', name: 'Revel\'s End', description: 'Faerûn\'s most desolate prison, and Naerth Maxildanar\'s forever home.' },
+            { id: 'black-cabin', x: 2350, y: 1500, type: 'poi', name: 'Black Cabin', description: 'The location where we found the Summer Star - Note to self: Do not activate the Summer Star at random.' },
             
             // Dungeons
             { id: 'sunblight-fortress', x: 2400, y: 3350, type: 'dungeon', name: 'Sunblight Fortress', description: 'Estimated location of the hidden fortress of Xardorok Sunblight.' },
             { id: 'id-ascendant', x: 3800, y: 1650, type: 'dungeon', name: 'Id Ascendant', description: 'Crashed nautiloid ship, now a mind flayer outpost.' },
             { id: 'the-greenery', x: 710, y: 3005, type: 'dungeon', name: 'The Greenery', description: 'Zhentarim Hideout. A prima spot of the Black Network, nestled away in a hotspring forest.' },
+            { id: 'chwinga enclave', x: 2260, y: 1700, type: 'dungeon', name: 'Chwinga Enclave', description: 'A Chwinga enclave hidden in the forests of Lonelywood. After cleansing the place, we found what seems an entrance to the Underdark.' },
 
-            
+            // Custom markers
+            { id: 'bobs-bar', x: 2270, y: 580, type: 'custom', name: 'Bob\'s Bar', description: 'Bob\'s Bar, the homebase of Bob\'s Buddies.' },
+            { id: 'poem-location', x: 2170, y: 2550, type: 'custom', name: 'Poem Location', description: 'The poem from Auril points to a ritual location somewhere in the woods between Bryn Shander and Good Mead.' },
+            { id: 'underdark-entrance', x: 750, y: 3000, type: 'custom', name: 'Underdark Entrance', description: 'A tunnel we found in the Greenery, that has been used for smuggling Chardalyn to the Underdark.' },
+            { id: 'unknown-#1', x: 3200, y: 2800, type: 'custom', name: 'Unknown #1', description: 'During her flight in the ethereal state, Perrylou noticed a dock near the Sea of Moving Ice.' },
+            { id: 'unknown-#2', x: 1330, y: 1430, type: 'custom', name: 'Unknown #2', description: 'During his flight in the ethereal state, Grubx noticed what seemed to be man-made lights.' },
+            { id: 'marked-ruin-#1', x: 3800, y: 1650, type: 'custom', name: 'Marked Ruin #1', description: 'The map has several "ruins" marked on it. Without any further details.' },
+            { id: 'marked-ruin-#2', x: 500, y: 3400, type: 'custom', name: 'Marked Ruin #2', description: 'The map has several "ruins" marked on it. Without any further details.' },
+            { id: 'marked-ruin-#3', x: 3800, y: 1650, type: 'custom', name: 'Marked Ruin #3', description: 'The map has several "ruins" marked on it. Without any further details.' },
+            { id: 'marked-ruin-#4', x: 850, y: 1500, type: 'custom', name: 'Marked Ruin #4', description: 'The map has several "ruins" marked on it. Without any further details.' },
            ];
 
            const img  = document.getElementById('map-image');
@@ -395,25 +409,36 @@
                 // Touch events
                 let touchDistance = 0;
                 this.container.addEventListener(
-                    "touchstart",
-                    (e) => {onTouchStart(e);
-                    if (e.touches.length === 1) {    // ignore pinch
-                        const now = Date.now();
-                        if (now - lastTapTime < DOUBLE_TAP_DELAY) {
-                        handleDoubleTap(e.touches[0]);
-                        lastTapTime = 0;             // reset so a triple-tap acts like two doubles
-                        } else {
-                        lastTapTime = now;
-                        }
+                'touchstart',
+                (e) => {
+                    if (e.touches.length === 2) {
+                    // ── pinch starts ──────────────────────────────
+                    pinchStartDistance = this.getTouchDistance(e.touches);
+                    return;                       // skip single tap/drag logic
                     }
-                    }, { passive: true });
+
+                    // ── single-finger tap / drag ────────────────────
+                    const now = Date.now();
+                    if (now - lastTapTime < DOUBLE_TAP_DELAY) {       // double-tap!
+                    this.handleDoubleTap(e.touches[0]);
+                    lastTapTime = 0;                                // reset
+                    } else {
+                    lastTapTime = now;
+                    this.startDrag(e.touches[0]);
+                    }
+                },
+                { passive: true }                  // never calls preventDefault
+                );
+
+
                 this.container.addEventListener(
                     "touchmove",
                     (e) => {
                         e.preventDefault();
                         if (e.touches.length === 2) {
                             const newDistance = this.getTouchDistance(e.touches);
-                            const delta = (newDistance - touchDistance) * 0.003;
+                            const delta = (newDistance - pinchStartDistance) * 0.003; // positive ⇢ zoom-in, negative ⇢ zoom-out
+                            pinchStartDistance = newDistance;
                             touchDistance = newDistance;
                             this.handlePinchZoom(e, delta);
                         } else if (e.touches.length === 1) {
