@@ -255,8 +255,8 @@
         }
 
         .sparkle {
-            width: 80px;
-            height: 80px;
+            width: 800px;
+            height: 800px;
             position: relative;
         }
 
@@ -273,7 +273,7 @@
             background: radial-gradient(circle,
                         rgba(0, 190, 255, 0.8) 0%,
                         rgba(0, 190, 255, 0.04) 70%);
-            animation: sparkle-pulse 1.2s infinite ease-out;
+            animation: sparkle-pulse 2.2s infinite ease-out;
         }
 
         .sparkle::after {
@@ -316,7 +316,7 @@
             <div id="coordinates">X: 0, Y: 0</div>
         </div>
     </div>
-    <div id=legend class="control-group legend">
+    <div id="legend" class="control-group legend">
             <div class="legend-item">
                 <div class="marker-dot town"></div>
                 <span>Town</span>
@@ -329,7 +329,6 @@
                 <div class="marker-dot dungeon"></div>
                 <span>Dungeon</span>
             </div>
-        </div>
     </div>
 
     <div class="popup" id="popup"></div>
@@ -338,7 +337,7 @@
         // Configuration
         // Overlay settings
         const overlay          = document.getElementById("loading-overlay");
-        const OVERLAY_MIN_TIME = 2000;                 // ms  ➜  2 seconds
+        const OVERLAY_MIN_TIME = 3000;                 // ms  ➜  2 seconds
         const overlayStart     = Date.now();           // remember when it showed
         const overlayEnd       = overlayStart + OVERLAY_MIN_TIME;
 
@@ -359,6 +358,9 @@
         let lastTapTime         = 0;              // for double-tap detection
         const DOUBLE_TAP_DELAY  = 300;            // ms
         let pinchStartDistance  = 0;              // first span in a pinch
+        let lastTapX = 0, lastTapY = 0;   // position of the previous tap
+        let tapX     = 0, tapY     = 0;   // position of the current tap
+        const MOVE_TOLERANCE = 12;        // px – tap that moves more is a drag
     
         // Initial markers data
         const markersData = [
@@ -397,13 +399,6 @@
             { id: 'marked-ruin-#4', x: 850, y: 1500, type: 'custom', name: 'Marked Ruin #4', description: 'The map has several "ruins" marked on it. Without any further details.' },
            ];
 
-           const img  = document.getElementById('map-image');
-            img.addEventListener('load', () => {
-            CONFIG.mapWidth  = img.naturalWidth;
-            CONFIG.mapHeight = img.naturalHeight;
-            CONFIG.maxZoom   = 2;               // no up-scaling on phones
-            initViewport();                     // your existing centering / scaling call
-            });
 
         class InteractiveMap {
             constructor() {
@@ -450,7 +445,8 @@
 
                 const scaleX = cw / config.mapWidth;
                 const scaleY = ch / config.mapHeight;
-                this.scale = this.minScale;       // start zoomed-out for all devices
+                this.minScale = Math.max(scaleX, scaleY);  
+                this.scale    = this.minScale;       
 
                 if (!this.scale || this.scale < this.minScale) {
                     this.scale = this.minScale;
@@ -723,7 +719,7 @@
                     <p>${data.description}</p>
                 `;
                 // match title colour to marker category
-                const catColour = getComputedStyle(el).backgroundColor;
+                const catColour = getComputedStyle(marker).backgroundColor;
                 popup.querySelector('h3').style.color = catColour;
 
                 if (isMobile) {
