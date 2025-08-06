@@ -95,16 +95,6 @@
             background: #ef4444;
         }
 
-        #controls {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            z-index: 1000;
-        }
-
         .control-group {
             background: rgba(0, 0, 0, 0.8);
             border-radius: 8px;
@@ -147,32 +137,21 @@
             text-align: center;
         }
 
-        .popup {
-            position: fixed;
-            left: 50%;
-            bottom: 25px;
-            transform: translateX(-50%) translateY(100px);
-            /* slide-up animation */
-            opacity: 0;
-            background: rgba(0,0,0,0.95);
-            border: 1px solid #374151;
-            border-radius: 8px;
-            padding: 15px;
-            max-width: 320px;
-            z-index: 2000;
-            pointer-events: none;
-            transition: opacity .25s, transform .25s;
+        /* --- popup (desktop & mobile) --- */
+        .popup{
+            position:fixed;
+            left:50%;bottom:25px;
+            transform:translateX(-50%) translateY(100px);
+            max-width:320px;
+            background:rgba(0,0,0,.95);
+            border:1px solid #374151;
+            border-radius:8px;padding:15px;
+            opacity:0;pointer-events:none;
+            transition:opacity .25s,transform .25s;
+            z-index:2000;
         }
-
-        .popup.active {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
-        .popup h3 {
-            margin: 0 0 8px;
-            /* colour is now set inline from JS */
-        }
+        .popup.active{opacity:1;transform:translateX(-50%) translateY(0)}
+        .popup h3{margin:0 0 8px}
 
 
         .popup.mobile {
@@ -224,6 +203,7 @@
         .marker-dot.town { background: #4ade80; }
         .marker-dot.poi { background: #60a5fa; }
         .marker-dot.dungeon { background: #c084fc; }
+        .marker-dot.custom { background: #ef4444; }
 
         .legend-item span {
             font-size: 14px;
@@ -357,9 +337,8 @@
         // Configuration
         // Overlay settings
         const overlay          = document.getElementById("loading-overlay");
-        const OVERLAY_MIN_TIME = 3000;                 // ms  ➜  2 seconds
+        const OVERLAY_MIN_TIME = 3000;                 // ms  ➜  3 seconds
         const overlayStart     = Date.now();           // remember when it showed
-        const overlayEnd       = overlayStart + OVERLAY_MIN_TIME;
         /* ── sprinkle 8 animated sparkles ─────────────────────────── */
         document.addEventListener('DOMContentLoaded', () => {
             const sparkleField  = document.getElementById('sparkle-field');
@@ -398,8 +377,7 @@
 
         // ✱ Detect coarse input to tweak zoom limits on phones
         const isMobile          = window.matchMedia('(pointer:coarse)').matches;
-        if (isMobile) config.minZoom = 0.8;       // sane min zoom on phones
-
+        config.minZoom = isMobile ? 0.8 : 0.6;   // 0.8 on phones, 0.6 on desktop
         let lastTapTime         = 0;              // for double-tap detection
         const DOUBLE_TAP_DELAY  = 300;            // ms
         let pinchStartDistance  = 0;              // first span in a pinch
@@ -521,7 +499,6 @@
                 this.container.addEventListener('mouseleave', () => this.endDrag());
                 
                 // Touch events
-                let touchDistance = 0;
                 this.container.addEventListener(
                 'touchstart',
                 (e) => {
@@ -563,7 +540,6 @@
                             const newDistance = this.getTouchDistance(e.touches);
                             const delta = (newDistance - pinchStartDistance) * 0.003; // positive ⇢ zoom-in, negative ⇢ zoom-out
                             pinchStartDistance = newDistance;
-                            touchDistance = newDistance;
                             this.handlePinchZoom(e, delta);
                         } else if (e.touches.length === 1) {
                             this.drag(e.touches[0]);
@@ -588,7 +564,7 @@
                 this.container.addEventListener('mousemove', (e) => this.updateCoordinates(e));
                 
                 // Window resize
-                window.addEventListener('resize', () => this.handleResize());
+                window.addEventListener('resize', () => this.setupMap());
             }
            
             // DRAG HELPERS
