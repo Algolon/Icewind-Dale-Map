@@ -300,6 +300,7 @@
                     srcset="map-webp-2048.webp" />
                 <img
                     id="map-image"
+                    decoding="async"
                     src="map-webp.webp"
                     alt="Icewind Dale map" />
             </picture>
@@ -551,18 +552,28 @@
                 this.container.addEventListener('touchcancel', () => this.endDrag());
 
                 // Wheel zoom
-                this.container.addEventListener('wheel', (e) => {
-                    e.preventDefault();
-                    this.wheelZoom(e);
-                });
+                this.container.addEventListener(
+                    "wheel",
+                    (e) => {
+                        e.preventDefault();          // we want to cancel page-scroll
+                        this.wheelZoom(e);
+                    },
+                    { passive: false }               // tell browser this on purpose
+                );
                 
                 // Button controls
                 document.getElementById('zoom-in').addEventListener('click', () => this.zoom(config.zoomStep));
                 document.getElementById('zoom-out').addEventListener('click', () => this.zoom(-config.zoomStep));
                 
                 // Coordinate tracking
-                this.container.addEventListener('mousemove', (e) => this.updateCoordinates(e));
-                
+                let coordRAF = 0;
+                this.container.addEventListener("mousemove", (e) => {
+                    if (coordRAF) return;                // a call is already queued
+                    coordRAF = requestAnimationFrame(() => {
+                        this.updateCoordinates(e);
+                        coordRAF = 0;
+                    });
+                });                
                 // Window resize
                 window.addEventListener('resize', () => this.setupMap());
             }
