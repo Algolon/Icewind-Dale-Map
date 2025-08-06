@@ -148,19 +148,32 @@
         }
 
         .popup {
-            position: absolute;
-            background: rgba(0, 0, 0, 0.95);
+            position: fixed;
+            left: 50%;
+            bottom: 25px;
+            transform: translateX(-50%) translateY(100px);
+            /* slide-up animation */
+            opacity: 0;
+            background: rgba(0,0,0,0.95);
             border: 1px solid #374151;
             border-radius: 8px;
             padding: 15px;
-            max-width: 300px;
+            max-width: 320px;
             z-index: 2000;
             pointer-events: none;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: opacity 0.2s, transform 0.2s;
-            backdrop-filter: blur(10px);
+            transition: opacity .25s, transform .25s;
         }
+
+        .popup.active {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .popup h3 {
+            margin: 0 0 8px;
+            /* colour is now set inline from JS */
+        }
+
 
         .popup.mobile {
             position: fixed;
@@ -230,10 +243,56 @@
             right: 10px;
         }
         }
+        /* ========== loading overlay ================================= */
+        #loading-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;                       /* top of everything */
+            background: url("paper-webp.webp") center/cover no-repeat;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sparkle {
+            width: 80px;
+            height: 80px;
+            position: relative;
+        }
+
+        /* two pulsating radial gradients offset in time */
+        .sparkle::before,
+        .sparkle::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            margin: auto;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle,
+                        rgba(0, 190, 255, 0.8) 0%,
+                        rgba(0, 190, 255, 0.04) 70%);
+            animation: sparkle-pulse 1.2s infinite ease-out;
+        }
+
+        .sparkle::after {
+            animation-delay: 0.6s;               /* second wave */
+        }
+
+        @keyframes sparkle-pulse {
+            0%   { transform: scale(0.1); opacity: 1; }
+            70%  { opacity: 0.4; }
+            100% { transform: scale(1.6); opacity: 0; }
+        }
     </style>
 </head>
 <body>
- <div id="map-container">
+    <!-- ── full-screen loading overlay ────────────────────────── -->
+    <div id="loading-overlay">
+        <div class="sparkle"></div>
+    </div>
+    <div id="map-container">
         <div id="map-viewport">
             <picture id="map-picture">
                 <source
@@ -277,6 +336,13 @@
 
     <script>
         // Configuration
+        // Overlay settings
+        const overlay          = document.getElementById("loading-overlay");
+        const OVERLAY_MIN_TIME = 2000;                 // ms  ➜  2 seconds
+        const overlayStart     = Date.now();           // remember when it showed
+        const overlayEnd       = overlayStart + OVERLAY_MIN_TIME;
+
+        // Map configuration
         const config = {
             mapWidth: 6000,
             mapHeight: 4215,
@@ -348,8 +414,6 @@
                 this.markerLayer = document.getElementById('marker-layer');
                 this.coordDisplay = document.getElementById('coordinates');
                 this.popup = document.getElementById('popup');
-                
-                this.scale = 1;
                 this.x = 0;
                 this.y = 0;
                 this.isDragging = false;
@@ -386,7 +450,7 @@
 
                 const scaleX = cw / config.mapWidth;
                 const scaleY = ch / config.mapHeight;
-                this.minScale = Math.max(scaleX, scaleY);
+                this.scale = this.minScale;       // start zoomed-out for all devices
 
                 if (!this.scale || this.scale < this.minScale) {
                     this.scale = this.minScale;
@@ -402,6 +466,10 @@
 
                 this.constrainPosition();
                 this.updateTransform();
+                const elapsed = Date.now() - overlayStart;
+                setTimeout(() => {
+                    overlay.style.display = "none";
+                }, Math.max(0, OVERLAY_MIN_TIME - elapsed));
             }
 
             setupEventListeners() {
@@ -424,13 +492,23 @@
 
                     // ── single-finger tap / drag ────────────────────
                     const now = Date.now();
-                    if (now - lastTapTime < DOUBLE_TAP_DELAY) {       // double-tap!
-                    this.handleDoubleTap(e.touches[0]);
-                    lastTapTime = 0;                                // reset
-                    } else {
-                    lastTapTime = now;
-                    this.startDrag(e.touches[0]);
+                    tapX = e.touches[0].clientX;
+                    tapY = e.touches[0].clientY;
+
+                    if (now - lastTapTime < DOUBLE_TAP_DELAY) {
+                        // reject if finger moved too far since last tap
+                        const dx = tapX - lastTapX;
+                        const dy = tapY - lastTapY;
+                        if (Math.hypot(dx, dy) < MOVE_TOLERANCE) {
+                            this.handleDoubleTap(e.touches[0]);
+                            lastTapTime = 0;
+                            return;
+                        }
                     }
+                    lastTapTime = now;
+                    lastTapX = tapX;
+                    lastTapY = tapY;
+                    this.startDrag(e.touches[0]);
                 },
                 { passive: true }                  // never calls preventDefault
                 );
@@ -453,6 +531,7 @@
                     { passive: false }
                 );
                 this.container.addEventListener("touchend", () => this.endDrag());
+                this.container.addEventListener('touchcancel', () => this.endDrag());
 
                 // Wheel zoom
                 this.container.addEventListener('wheel', (e) => {
@@ -643,7 +722,10 @@
                     <h3>${data.name}</h3>
                     <p>${data.description}</p>
                 `;
-                
+                // match title colour to marker category
+                const catColour = getComputedStyle(el).backgroundColor;
+                popup.querySelector('h3').style.color = catColour;
+
                 if (isMobile) {
                     // Mobile: Center popup on screen
                     this.popup.classList.add('mobile');
