@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>D&D Interactive Map - Icewind Dale</title>
     <style>
         * {
@@ -230,13 +230,20 @@
             color: #fff;
         }
         
-        #legend {
-            position: absolute;      /* lift it above #map-container */
+        #controls {            /* + / –  buttons + coordinates */
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        #legend {              /* legend box */
+            position: absolute;
             top: 20px;
             right: 20px;
-            z-index: 1000;           /* same layer as #controls */
+            z-index: 1000;
         }
-        
+
         /* === mobile layout overrides === */
         @media (max-width: 768px) {
         #controls {        /* + / – buttons and coords */
@@ -255,10 +262,19 @@
             position: fixed;
             inset: 0;
             z-index: 9999;                       /* top of everything */
+            width: 100%;
+            height: 100dvh;                /* dynamic vh covers URL bar collapse */
+            min-height: 100vh;             /* safe fallback for older browsers */
+
+            /* keep parchment + sparkle styles */
             background: url("paper-webp.webp") center/cover no-repeat;
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: env(safe-area-inset-top)   env(safe-area-inset-right)
+                    env(safe-area-inset-bottom) env(safe-area-inset-left);
+            z-index: 9999;
+            pointer-events: none;           /* overlay never steals touches */
         }
 
         #sparkle-field {
@@ -274,30 +290,20 @@
             left: 50%;
             width: 60px;
             height: 60px;
-            margin: -30px;                       /* centre each div */
+            margin: -30px;
             border-radius: 50%;
             background: radial-gradient(circle,
-                        rgba(0, 190, 255, 0.9) 0%,
+                        rgba(0, 190, 255, 0.9)  0%,
                         rgba(0, 190, 255, 0.05) 70%);
             transform: translate(var(--x), var(--y)) scale(0);
-            animation:
-                sparkle-scale 1.2s infinite ease-out,
-                sparkle-drift 4s   infinite linear;
+            animation: sparkle-pulse 1.4s infinite ease-out;
             animation-delay: var(--delay);
-            opacity: 0;
         }
 
-        @keyframes sparkle-scale {
-            0%   { transform: translate(var(--x), var(--y)) scale(0);   opacity: 1; }
+        @keyframes sparkle-pulse {
+            0%   { transform: translate(var(--x), var(--y)) scale(0.1); opacity: 1; }
             70%  { opacity: 0.4; }
             100% { transform: translate(var(--x), var(--y)) scale(1.6); opacity: 0; }
-        }
-
-        /* subtle drifting while they pulse */
-        @keyframes sparkle-drift {
-            from { transform: translate(var(--x), var(--y))   scale(0); }
-            to   { transform: translate(calc(var(--x) * 1.15),
-                                        calc(var(--y) * 1.15)) scale(0); }
         }
     </style>
 </head>
@@ -355,24 +361,29 @@
         const overlayStart     = Date.now();           // remember when it showed
         const overlayEnd       = overlayStart + OVERLAY_MIN_TIME;
         /* ── sprinkle 8 animated sparkles ─────────────────────────── */
-        const sparkleField = document.getElementById('sparkle-field');
-        const NUM_SPARKLES = 8;
+        document.addEventListener('DOMContentLoaded', () => {
+            const sparkleField  = document.getElementById('sparkle-field');
+            if (!sparkleField) return;                // safety guard
 
-        for (let i = 0; i < NUM_SPARKLES; i++) {
-            const s = document.createElement('div');
-            s.className = 'sparkle';
+            const NUM_SPARKLES = 8;
 
-            // random offset within ±150 px of centre
-            const angle = Math.random() * Math.PI * 2;
-            const radius = 80 + Math.random() * 70;   // 80-150 px
-            s.style.setProperty('--x', `${Math.cos(angle) * radius}px`);
-            s.style.setProperty('--y', `${Math.sin(angle) * radius}px`);
+            for (let i = 0; i < NUM_SPARKLES; i++) {
+                const s = document.createElement('div');
+                s.className = 'sparkle';
 
-            // stagger the pulse so they’re not all in sync
-            s.style.setProperty('--delay', `${Math.random() * 1.2}s`);
+                // random offset within ±150 px of centre
+                const angle  = Math.random() * Math.PI * 2;
+                const radius = 80 + Math.random() * 70;          // 80–150 px
+                s.style.setProperty('--x', `${Math.cos(angle) * radius}px`);
+                s.style.setProperty('--y', `${Math.sin(angle) * radius}px`);
 
-            sparkleField.appendChild(s);
-        }
+                // stagger each pulse
+                s.style.setProperty('--delay', `${Math.random() * 1.4}s`);
+
+                sparkleField.appendChild(s);
+            }
+        });
+
 
 
         // Map configuration
