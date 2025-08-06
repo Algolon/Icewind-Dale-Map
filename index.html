@@ -263,26 +263,42 @@
             pointer-events: none;                /* never blocks clicks */
         }
 
-        .sparkle {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 60px;
-            height: 60px;
-            margin: -30px;
-            border-radius: 50%;
-            background: radial-gradient(circle,
-                        rgba(0, 190, 255, 0.9)  0%,
-                        rgba(0, 190, 255, 0.05) 70%);
-            transform: translate(var(--x), var(--y)) scale(0);
-            animation: sparkle-pulse 1.4s infinite ease-out;
-            animation-delay: var(--delay);
+        .sparkle{
+            position:absolute;
+            top:50%;left:50%;
+            width:60px;height:60px;
+            margin:-30px;                        /* centre each div */
+            transform:translate(var(--x),var(--y)) scale(0);
+            animation:sparkle-pulse 1.4s infinite ease-out;
+            animation-delay:var(--delay);
+            opacity:0;
         }
 
-        @keyframes sparkle-pulse {
-            0%   { transform: translate(var(--x), var(--y)) scale(0.1); opacity: 1; }
-            70%  { opacity: 0.4; }
-            100% { transform: translate(var(--x), var(--y)) scale(1.6); opacity: 0; }
+        /* ---------- round glow version ---------- */
+        .sparkle.circle{
+            border-radius:50%;
+            background:radial-gradient(circle,
+                        rgba(0,190,255,.9) 0%,
+                        rgba(0,190,255,.05) 70%);
+        }
+
+        /* ---------- 4-point star version ---------- */
+        .sparkle.star{
+            background:transparent;              /* main div stays empty */
+        }
+        .sparkle.star::before,
+        .sparkle.star::after{
+            content:'';
+            position:absolute;inset:0;
+            background:linear-gradient(transparent 45%, rgba(0,190,255,.9) 50%, transparent 55%);
+        }
+        .sparkle.star::after{ transform:rotate(90deg); } /* vertical bar */
+
+        /* ---------- animation keyframes ---------- */
+        @keyframes sparkle-pulse{
+            0%   { transform:translate(var(--x),var(--y)) scale(.1); opacity:1;}
+            70%  { opacity:.4;}
+            100% { transform:translate(var(--x),var(--y)) scale(1.6); opacity:0;}
         }
     </style>
 </head>
@@ -348,11 +364,12 @@
             const sparkleField  = document.getElementById('sparkle-field');
             if (!sparkleField) return;                // safety guard
 
-            const NUM_SPARKLES = 16;  
+            const NUM_SPARKLES = 20;  
 
             for (let i = 0; i < NUM_SPARKLES; i++) {
                 const s = document.createElement('div');
-                s.className = 'sparkle';
+                const type = Math.random() < 0.5 ? 'circle' : 'star'; // 50-50 mix
+                s.className = `sparkle ${type}`;
 
                 // random offset within ±150 px of centre
                 const angle  = Math.random() * Math.PI * 2;
