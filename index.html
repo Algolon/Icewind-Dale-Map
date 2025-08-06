@@ -140,29 +140,34 @@
         }
 
         /* --- popup (desktop & mobile) --- */
-        .popup{
-            position:fixed;
-            left:50%;bottom:25px;
-            transform:translateX(-50%) translateY(100px);
-            max-width:320px;
-            background:rgba(0,0,0,.95);
-            border:1px solid #374151;
-            border-radius:8px;padding:15px;
-            opacity:0;pointer-events:none;
-            transition:opacity .25s,transform .25s;
-            z-index:2000;
-            max-height: calc(100vh - 120px); /* never taller than screen */
-            overflow: auto;                  /* scroll inside if needed */
+       /* --- popup (single definition) -------------------------------- */
+        .popup {
+            position: fixed;
+            max-width: 320px;                 /* desktop cap */
+            max-height: calc(100vh - 120px);  /* never taller than viewport */
+            overflow: auto;                   /* scroll inside if too tall */
+            background: rgba(0, 0, 0, 0.95);
+            border: 1px solid #374151;
+            border-radius: 8px;
+            padding: 15px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .25s, transform .25s;
+            z-index: 2000;
         }
-        @media (max-width: 768px) {
-            .popup { bottom: 40px; }  /* same 40 px all around */
-        }
-        .popup.active{opacity:1;transform:translateX(-50%) translateY(0)}
-        .popup h3{margin:0 0 8px}
+        .popup.active { opacity: 1; }
+        .popup h3 { margin: 0 0 8px; }
 
-        .popup.active {
-            opacity: 1;
-            transform: translateY(0);
+        /* —— mobile (≤ 768 px): bottom-centre, 20 px margins —— */
+        @media (max-width: 768px) {
+            .popup {
+                left: 50%;
+                bottom: 20px;
+                width: calc(100% - 40px);   /* 20 px on both sides */
+                max-width: none;            /* allow full width on tablets */
+                transform: translate(-50%, 20px);
+            }
+            .popup.active { transform: translate(-50%, 0); }
         }
 
         .popup h3 {
@@ -753,19 +758,29 @@
                 popup.querySelector('h3').style.color = catColour;
 
                 if (isMobile) {
+                    /* —— mobile: CSS handles position —— */
+                    this.popup.style.left       = '50%';
+                    this.popup.style.top        = 'auto';
+                    this.popup.style.bottom     = '20px';
+                    this.popup.style.width      = 'calc(100% - 40px)';
+                    this.popup.style.transform  = 'translate(-50%, 0)';
                 } else {
-                    // Desktop: Position near marker
+                    /* —— desktop: anchor near marker —— */
                     const rect = marker.getBoundingClientRect();
-                    const popupHeight = this.popup.offsetHeight;
-                    
-                    if (rect.top - popupHeight - 10 < 0) {
-                        this.popup.style.top = `${rect.bottom + 10}px`;
+                    const popH = this.popup.offsetHeight;
+
+                    this.popup.style.width      = 'auto';      // shrink-wrap
+                    this.popup.style.bottom     = 'auto';      // clear mobile value
+
+                    if (rect.top - popH - 10 < 0) {
+                        /* not enough room above → show below */
+                        this.popup.style.top       = `${rect.bottom + 10}px`;
                         this.popup.style.transform = 'translate(-50%, 0)';
                     } else {
-                        this.popup.style.top = `${rect.top - 10}px`;
+                        /* show above the marker */
+                        this.popup.style.top       = `${rect.top - 10}px`;
                         this.popup.style.transform = 'translate(-50%, -100%)';
                     }
-                    
                     this.popup.style.left = `${rect.left + rect.width / 2}px`;
                 }
                 
