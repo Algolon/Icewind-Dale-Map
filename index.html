@@ -101,6 +101,8 @@
             padding: 10px;
             backdrop-filter: blur(10px);
         }
+        /* space between zoom buttons and coordinates */
+        .control-group + .control-group { margin-top: 6px; }
 
         .zoom-controls {
             display: flex;
@@ -149,22 +151,14 @@
             opacity:0;pointer-events:none;
             transition:opacity .25s,transform .25s;
             z-index:2000;
+            max-height: calc(100vh - 120px); /* never taller than screen */
+            overflow: auto;                  /* scroll inside if needed */
+        }
+        @media (max-width: 768px) {
+            .popup { bottom: 40px; }  /* same 40 px all around */
         }
         .popup.active{opacity:1;transform:translateX(-50%) translateY(0)}
         .popup h3{margin:0 0 8px}
-
-
-        .popup.mobile {
-            position: fixed;
-            left: 50% !important;
-            top: 50% !important;
-            transform: translate(-50%, -50%) !important;
-            width: 90%;
-            max-width: 300px;
-            pointer-events: auto;
-            background: rgba(0, 0, 0, 0.95);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
 
         .popup.active {
             opacity: 1;
@@ -330,6 +324,10 @@
                 <div class="marker-dot dungeon"></div>
                 <span>Dungeon</span>
             </div>
+            <div class="legend-item">
+                <div class="marker-dot custom"></div>
+                <span>Custom Marker</span>
+            </div>
     </div>
 
     <div class="popup" id="popup"></div>
@@ -345,7 +343,7 @@
             const sparkleField  = document.getElementById('sparkle-field');
             if (!sparkleField) return;                // safety guard
 
-            const NUM_SPARKLES = 8;
+            const NUM_SPARKLES = 16;  
 
             for (let i = 0; i < NUM_SPARKLES; i++) {
                 const s = document.createElement('div');
@@ -353,7 +351,7 @@
 
                 // random offset within ±150 px of centre
                 const angle  = Math.random() * Math.PI * 2;
-                const radius = 80 + Math.random() * 70;          // 80–150 px
+                const radius = 60 + Math.random() * 120;          // 80–150 px
                 s.style.setProperty('--x', `${Math.cos(angle) * radius}px`);
                 s.style.setProperty('--y', `${Math.sin(angle) * radius}px`);
 
@@ -755,11 +753,8 @@
                 popup.querySelector('h3').style.color = catColour;
 
                 if (isMobile) {
-                    // Mobile: Center popup on screen
-                    this.popup.classList.add('mobile');
                 } else {
                     // Desktop: Position near marker
-                    this.popup.classList.remove('mobile');
                     const rect = marker.getBoundingClientRect();
                     const popupHeight = this.popup.offsetHeight;
                     
